@@ -1,0 +1,5 @@
+* scheduled-block
+
+This is rewritten in Haskell of the original [[https://github.com/asnakep/ScheduledBlocks][ScheduledBlocks]] in Python.
+
+No cardano-node Required, data is taken from [[blockfrost.io]] and [[https://armada-alliance.com][armada-alliance.com]] .

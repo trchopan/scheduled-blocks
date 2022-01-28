@@ -1,0 +1,232 @@
+#+TITLE: MyApp
+#+AUTHOR: Chop Tr (trchopan)
+#+DATE: <2022-01-27 Sat>
+
+* Getting all the variables
+
+** The Epoch Nonce
+
+#+begin_src
+GET https://cardano-mainnet.blockfrost.io/api/v0/epochs/{epochNumber}/parameters
+#+end_src
+
+#+begin_src json
+{
+  "epoch": 315,
+  "min_fee_a": 44,
+  "min_fee_b": 155381,
+  "max_block_size": 73728,
+  "max_tx_size": 16384,
+  "max_block_header_size": 1100,
+  "key_deposit": "2000000",
+  "pool_deposit": "500000000",
+  "e_max": 18,
+  "n_opt": 500,
+  "a0": 0.3,
+  "rho": 0.003,
+  "tau": 0.2,
+  "decentralisation_param": 0,
+  "extra_entropy": null,
+  "protocol_major_ver": 6,
+  "protocol_minor_ver": 0,
+  "min_utxo": "34482",
+  "min_pool_cost": "340000000",
+  "nonce": "fc09d8970d48139f90eee8f38fc57ff4f1ee2215d0be3402b5f681d2af271745",
+  "price_mem": 0.0577,
+  "price_step": 7.21e-5,
+  "max_tx_ex_mem": "11250000",
+  "max_tx_ex_steps": "10000000000",
+  "max_block_ex_mem": "50000000",
+  "max_block_ex_steps": "40000000000",
+  "max_val_size": "5000",
+  "collateral_percent": 150,
+  "max_collateral_inputs": 3,
+  "coins_per_utxo_word": "34482"
+}
+#+end_src
+
+Fields:
+- ~nonce~
+
+
+** Network total active Stake of a given Epoch
+
+#+begin_src
+GET https://cardano-mainnet.blockfrost.io/api/v0/epochs/{epochNumber}
+#+end_src
+
+#+begin_src json
+{
+  "epoch": 316,
+  "start_time": 1642715091,
+  "end_time": 1643147091,
+  "first_block_time": 1642715099,
+  "last_block_time": 1643147090,
+  "block_count": 20141,
+  "tx_count": 841394,
+  "output": "53565358148257632",
+  "fees": "252763162151",
+  "active_stake": "23549369658121787"
+}
+#+end_src
+
+Fields:
+- ~active_stake~
+
+
+** Pool sigma and active stake of the given Epoch
+
+#+begin_src
+GET https://cardano-mainnet.blockfrost.io/api/v0/pools/{poolId}/history
+#+end_src
+
+#+begin_src json
+[
+  "...",
+  {
+    "epoch": 314,
+    "blocks": 0,
+    "active_stake": "907443731361",
+    "active_size": 0.000038442880604470795,
+    "delegators_count": 18,
+    "rewards": "0",
+    "fees": "0"
+  },
+  {
+    "epoch": 315,
+    "blocks": 0,
+    "active_stake": "907443731361",
+    "active_size": 0.00003855390392129489,
+    "delegators_count": 18,
+    "rewards": "0",
+    "fees": "0"
+  },
+  {
+    "epoch": 316,
+    "blocks": 0,
+    "active_stake": "907443731361",
+    "active_size": 0.00003853367391717161,
+    "delegators_count": 18,
+    "rewards": "0",
+    "fees": "0"
+  }
+]
+#+end_src
+
+Fields:
+- Pool sigma: ~active_size~
+- Pool active stake: ~active_stake~
+
+
+** Genesis parameters
+
+#+begin_src
+GET https://cardano-mainnet.blockfrost.io/api/v0/genesis
+#+end_src
+
+#+begin_src json
+{
+  "active_slots_coefficient": 0.05,
+  "update_quorum": 5,
+  "max_lovelace_supply": "45000000000000000",
+  "network_magic": 764824073,
+  "epoch_length": 432000,
+  "system_start": 1506203091,
+  "slots_per_kes_period": 129600,
+  "slot_length": 1,
+  "max_kes_evolutions": 62,
+  "security_param": 2160
+}
+#+end_src
+
+Fields:
+- ~epoch_length~
+- ~active_slots_coefficient~
+- ~slot_length~
+
+
+** First block of Epoch 211 - First Shelly slot
+
+#+begin_src
+GET https://cardano-mainnet.blockfrost.io/api/v0/blocks/4555184
+#+end_src
+
+#+begin_src json
+{
+  "time": 1597355091,
+  "height": 4555184,
+  "hash": "33a28456a44277cbfb3457082467e56f16554932eb2a9eb7ceca97740bd4f4db",
+  "slot": 5788800,
+  "epoch": 211,
+  "epoch_slot": 0,
+  "slot_leader": "ShelleyGenesis-4485708022839a7b",
+  "size": 4165,
+  "tx_count": 5,
+  "output": "9462217924467",
+  "fees": "961353",
+  "block_vrf": "vrf_vk1dkfsejw3h2k7tnguwrauqfwnxa7wj3nkp3yw2yw3400c4nlkluwqzwvka6",
+  "previous_block": "9e6fc811d9b09f7c8c6d7a23dc8b3360a9c4a3930ba640ce107e944d5e2750e2",
+  "next_block": "294113ead7681168001e71db1aa7cdce51703f1b9303cc879e702f5b48d0e245",
+  "confirmations": 2256371
+}
+#+end_src
+
+Fields:
+- First Shelly slot: ~slot~
+
+
+** Using above we can calculate the first slot of the given Epoch
+
+Formular:
+
+#+begin_src python
+firstSlotOfEpoch = (firstShellySlot) + (epochNumber - 211) * epochLength
+#+end_src
+
+Note `epochNumber` must greater than 211
+
+
+* Calculate seed of a slot
+
+** Hash Blake2b
+
+https://hackage.haskell.org/package/cryptonite-0.21/docs/Crypto-Hash-Algorithms.html#t:Blake2b_512
+
+
+** Calculate Seed
+
+*** Neutral Seed (seedLBytes)
+
+#+begin_src python
+h = hashlib.blake2b(digest_size=32)
+h.update(bytearray([0, 0, 0, 0, 0, 0, 0, 1]))  # neutral nonce
+seedLbytes = h.digest()
+#+end_src
+
+
+*** Slot + Nonce Seed (slotToSeedBytes)
+
+#+begin_src python
+h = hashlib.blake2b(digest_size=32)
+h.update(slot.to_bytes(8, byteorder="big") + binascii.unhexlify(eta0))
+slotToSeedBytes = h.digest()
+#+end_src
+
+
+** Seed based on slot fomula
+
+#+begin_src python
+seed = [x ^ slotToSeedBytes[i] for i, x in enumerate(seedLbytes)]
+#+end_src
+
+
+* Check the VRF key is certified for the slot
+
+** libsodium
+
+A dynamic library
+
+file: ~/usr/local/lib/libsodium.23.dylib~
+
+method: ~crypto_vrf_prove~
+
