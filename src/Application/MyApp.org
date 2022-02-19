@@ -220,6 +220,52 @@ seed = [x ^ slotToSeedBytes[i] for i, x in enumerate(seedLbytes)]
 #+end_src
 
 
+* Make Slot seed
+
+** Neutral Nonce
+
+It is the Blake2b hash of Byte Array [0, 0, 0, 0, 0, 0, 0, 1]. Using =cryptonite= it is calculated by
+
+#+begin_src haskell
+seedLBytes :: Digest Blake2b_256
+seedLBytes = hash neutral
+  where neutral = BA.pack [0, 0, 0, 0, 0, 0, 0, 1] :: ByteString
+#+end_src
+
+Check the hash should be:
+
+#+begin_src
+12dd0a6a7d0e222a97926da03adb5a7768d31cc7c5c2bd6828e14a7d25fa3a60
+#+end_src
+
+
+** Slot Nonce
+
+Is the Blake2b hash of the concatenate (append slot + nonce) of the Slot Number in Int64 and the epoch Nonce
+
+#+begin_src haskell
+slotToSeedBytes :: Int64 -> ByteString -> Digest Blake2b_256
+slotToSeedBytes slot nonce = hashBlake2b $ BS.append encodedSlot nonce
+  where encodedSlot = LBS.toStrict $ Binary.encode slot
+#+end_src
+
+
+** mkSeed function
+
+Then the =mkSeed= function is a simple ~zip~
+
+#+begin_src haskell
+-- For every seedLBytes xor it with the slotSeedBytes
+mkSeed :: Digest Blake2b_256 -> Digest Blake2b_256 -> [Word8]
+mkSeed seedLBytes slotToSeedBytes = zipWith xor
+                                            arrSeedLBytes
+                                            arrSlotToSeedBytes
+ where
+  arrSeedLBytes      = B.unpack seedLBytes
+  arrSlotToSeedBytes = B.unpack slotToSeedBytes
+#+end_src
+
+
 * Check the VRF key is certified for the slot
 
 ** libsodium

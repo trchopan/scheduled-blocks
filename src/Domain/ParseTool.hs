@@ -1,8 +1,4 @@
-module Domain.ParseTool
-  ( parseInt
-  , parseFloat
-  , parseUTCTime
-  ) where
+module Domain.ParseTool where
 
 import           Data.Aeson                     ( (.:)
                                                 , Key
@@ -10,6 +6,7 @@ import           Data.Aeson                     ( (.:)
                                                 )
 import           Data.Aeson.Types               ( Parser )
 import           Data.Foldable                  ( asum )
+import           Data.Int                       ( Int64 )
 import           Data.Time                      ( UTCTime )
 import           Data.Time.Clock.POSIX          ( posixSecondsToUTCTime )
 import           Debug.Trace                    ( trace )
@@ -25,6 +22,17 @@ parseInt v field = asum
       Nothing -> trace ("failed s=" ++ s) $ fail "not a number"
       Just x  -> return x
   ]
+
+parseInt64 :: Object -> Key -> Parser Int64
+parseInt64 v field = asum
+  [ v .: field
+  , do
+    s <- v .: field
+    case readMaybe s :: Maybe Int64 of
+      Nothing -> trace ("failed s=" ++ s) $ fail "not a number"
+      Just x  -> return x
+  ]
+
 
 parseFloat :: Object -> Key -> Parser Float
 parseFloat v field = asum

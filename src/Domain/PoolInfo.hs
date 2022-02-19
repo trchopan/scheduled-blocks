@@ -9,8 +9,10 @@ import           Data.Aeson                     ( (.:)
                                                 , object
                                                 , withObject
                                                 )
+import           Data.Int                       ( Int64 )
 import           Data.Text                      ( Text )
 import           GHC.Generics                   ( Generic )
+import Domain.ParseTool (parseInt64)
 
 data PoolInfo = PoolInfo
   { poolIDPoolInfo         :: Text
@@ -22,7 +24,7 @@ data PoolInfo = PoolInfo
   , liveSizePoolInfo       :: Float
   , liveSaturationPoolInfo :: Float
   , liveDelegatorsPoolInfo :: Int
-  , activeStakePoolInfo    :: Text
+  , activeStakePoolInfo    :: Int64
   , activeSizePoolInfo     :: Float
   , declaredPledgePoolInfo :: Text
   , livePledgePoolInfo     :: Text
@@ -70,7 +72,7 @@ instance FromJSON PoolInfo where
       <*> (v .: "live_size")
       <*> (v .: "live_saturation")
       <*> (v .: "live_delegators")
-      <*> (v .: "active_stake")
+      <*> parseInt64 v "active_stake"
       <*> (v .: "active_size")
       <*> (v .: "declared_pledge")
       <*> (v .: "live_pledge")

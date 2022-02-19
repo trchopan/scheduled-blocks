@@ -3,6 +3,12 @@ module Main where
 import           Application.MyApp              ( epochBlockSchedule
                                                 , epochSchedule
                                                 )
+import           Data.ByteString                ( ByteString )
+import           Data.ByteString.UTF8           ( toString )
+import           Infrastructure.Crypto          ( currentNonce
+                                                , encodeSlot
+                                                , seedLBytes
+                                                )
 import           System.Environment             ( getArgs
                                                 , getProgName
                                                 )
@@ -10,6 +16,7 @@ import           System.Exit                    ( exitFailure )
 import           System.IO                      ( hPutStrLn
                                                 , stderr
                                                 )
+import           Text.Printf                    ( printf )
 
 main :: IO ()
 main = do
@@ -22,10 +29,9 @@ main = do
     [blockFrostApi, poolId, epochStr] | [(epochNo, _)] <- reads epochStr ->
       epochBlockSchedule blockFrostApi poolId epochNo
 
-
     -- Print help
     _ -> do
       name <- getProgName
-      hPutStrLn stderr $ "usage: " ++ name ++ " blockFrostApi poolId epochNumber"
-      -- hPutStrLn stderr $ "usage: " ++ name ++ " blockFrostApi next"
+      hPutStrLn stderr
+        $ printf "usage: %s blockFrostApi poolId epochNumber" name
       exitFailure

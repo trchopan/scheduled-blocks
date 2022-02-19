@@ -14,7 +14,7 @@ version:            0.1.0.0
 -- The license under which the package is released.
 -- license:
 author:             Quang Tran (Chop Tr)
-maintainer:         logan1011001@gmail.com
+maintainer:         chop@chop.ink
 
 -- A copyright notice.
 -- copyright:
@@ -26,9 +26,18 @@ common shared-properties
   build-depends:
     , aeson                 ^>=2.0.1.0
     , aeson-pretty
+    , async
     , base                  ^>=4.14.3.0
+    , base16-bytestring
+    , binary
     , bytestring
+    , cryptonite
+    , directory
+    , format-numbers
     , http-conduit
+    , memory
+    , random
+    , stm-chans
     , text
     , time
     , unordered-containers
@@ -39,20 +48,22 @@ common shared-properties
 
 library
   import:          shared-properties
+  hs-source-dirs:  src
   exposed-modules:
     Application.MyApp
+    Domain.BlockchainGenesis
     Domain.BlockInfo
     Domain.CardanoGlobal
+    Domain.EpochInfo
+    Domain.EpochParameter
     Domain.ParseTool
-    Domain.PoolInfo
     Domain.PoolHistory
-    Domain.BlockchainGenesis
+    Domain.PoolInfo
     Infrastructure.Api
-
-  hs-source-dirs:  src
+    Infrastructure.Crypto
 
 executable scheduled-blocks
   import:         shared-properties
-  main-is:        Main.hs
+  main-is:        Main/Main.hs
   build-depends:  scheduled-blocks
   hs-source-dirs: app

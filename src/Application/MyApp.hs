@@ -1,23 +1,48 @@
 module Application.MyApp where
 
 import           Data.Aeson                     ( eitherDecode )
-import           Data.Aeson.Encode.Pretty       ( encodePretty )
-import qualified Data.ByteString.Lazy.Char8    as L
+import           Data.Int                       ( Int64 )
 import qualified Data.Text                     as T
-import           Domain.BlockchainGenesis       ( BlockchainGenesis )
-import           Domain.CardanoGlobal           ( ArmdaNonce
-                                                , Cardano
+import           Data.Text.Format.Numbers       ( PrettyCfg(PrettyCfg)
+                                                , prettyF
+                                                )
+import           Domain.BlockInfo               ( BlockInfo(slotBlockInfo) )
+import           Domain.BlockchainGenesis       ( BlockchainGenesis
+                                                  ( activeSlotsCoefficientBlockchainGenesis
+                                                  , epochLengthBlockchainGenesis
+                                                  , slotLengthBlockchainGenesis
+                                                  )
+                                                )
+import           Domain.CardanoGlobal           ( Cardano
                                                 , nextEpochs
                                                 )
-import           Domain.PoolInfo                ( PoolInfo )
+import           Domain.EpochInfo               ( EpochInfo
+                                                  ( activeStakeEpochInfo
+                                                  )
+                                                )
+import           Domain.EpochParameter          ( EpochParameter
+                                                  ( nonceEpochParameter
+                                                  )
+                                                )
+import           Domain.PoolInfo                ( PoolInfo
+                                                  ( activeSizePoolInfo
+                                                  , activeStakePoolInfo
+                                                  )
+                                                )
 import           Infrastructure.Api             ( getBlockchainGenesis
+                                                , getEpochInfo
                                                 , getEpochParam
+                                                , getFirstShellyBlock
                                                 , getGlobal
                                                 , getPoolInfo
                                                 )
 import           Network.HTTP.Simple            ( getResponseBody
                                                 , httpLBS
                                                 )
+import           System.Exit                    ( ExitCode(ExitFailure)
+                                                , exitWith
+                                                )
+import           Text.Printf                    ( printf )
 
 
 epochSchedule :: IO ()
@@ -26,21 +51,47 @@ epochSchedule = do
   let eitherGlobal =
         eitherDecode (getResponseBody globalResBs) :: Either String Cardano
   case eitherGlobal of
-    Left  err           -> print ("Cannot get global. Err: " ++ err)
-    Right cardanoGlobal -> putStr $ unlines $ nextEpochs cardanoGlobal 3
+    Left  err     -> print ("Cannot get global. Err: " ++ err)
+    Right cardano -> putStr $ unlines $ nextEpochs cardano 3
 
+
+handleLeftResponse :: String -> Either String b -> IO ()
+handleLeftResponse prefix e = case e of
+  Left err -> do
+    print ("Error handle " ++ prefix ++ ": " ++ err)
+    exitWith (ExitFailure 1)
+  Right _ -> return ()
+
+
+prettyInt :: Int64 -> T.Text
+prettyInt = prettyF (PrettyCfg 0 (Just ',') '.') . toRational
 
 epochBlockSchedule :: String -> String -> Int -> IO ()
 epochBlockSchedule blockFrostApi poolId epochNo = do
   let _blockFrostApi = T.pack blockFrostApi
 
-  nonceResBs <- httpLBS $ getEpochParam _blockFrostApi epochNo
-  let eitherNonce =
-        eitherDecode (getResponseBody nonceResBs) :: Either String ArmdaNonce
-  case eitherNonce of
-    Left  err   -> print ("No nonce. Err" ++ err)
-    Right nonce -> do
-      L.putStrLn $ encodePretty nonce
+  epochParamsResBs <- httpLBS $ getEpochParam _blockFrostApi epochNo
+  let eitherEpochParams =
+        eitherDecode (getResponseBody epochParamsResBs) :: Either
+            String
+            EpochParameter
+
+  handleLeftResponse "Getting Epoch Params" eitherEpochParams
+
+  let nonce = case eitherEpochParams of
+        Left  _ -> ""
+        Right e -> nonceEpochParameter e
+
+  epochInfoResBs <- httpLBS $ getEpochInfo _blockFrostApi epochNo
+  let eitherEpochInfo =
+        eitherDecode (getResponseBody epochInfoResBs) :: Either String EpochInfo
+
+  handleLeftResponse "Getting EpochInfo" eitherEpochInfo
+
+  let activeStake = case eitherEpochInfo of
+        Left  _ -> 0
+        Right e -> activeStakeEpochInfo e
+
 
   genesisResBs <- httpLBS $ getBlockchainGenesis _blockFrostApi
   let eitherBlockGenesis =
@@ -48,10 +99,45 @@ epochBlockSchedule blockFrostApi poolId epochNo = do
             String
             BlockchainGenesis
 
+  handleLeftResponse "Getting Genesis" eitherBlockGenesis
+
+  let (epochLength, activeSlotCoefficient, slotLength) =
+        case eitherBlockGenesis of
+          Left _ -> (0, 0, 0)
+          Right e ->
+            ( epochLengthBlockchainGenesis e
+            , activeSlotsCoefficientBlockchainGenesis e
+            , slotLengthBlockchainGenesis e
+            )
+
   poolInfoBs <- httpLBS $ getPoolInfo _blockFrostApi poolId
   let eitherPoolInfo =
         eitherDecode (getResponseBody poolInfoBs) :: Either String PoolInfo
-  case eitherPoolInfo of
-    Left  err      -> print ("No poolInfo " ++ err)
-    Right poolInfo -> do
-      L.putStrLn $ encodePretty poolInfo
+
+  handleLeftResponse "Getting PoolInfo" eitherPoolInfo
+
+  let (poolSigma, poolActiveStake) = case eitherPoolInfo of
+        Left  _ -> (0, 0)
+        Right e -> (activeSizePoolInfo e, activeStakePoolInfo e)
+
+  firstShellyBlockBs <- httpLBS $ getFirstShellyBlock _blockFrostApi
+  let eitherFirstShellyBlock =
+        eitherDecode (getResponseBody firstShellyBlockBs) :: Either
+            String
+            BlockInfo
+
+  handleLeftResponse "Getting First Shelly Block" eitherFirstShellyBlock
+
+  let firstShellyBlock = case eitherFirstShellyBlock of
+        Left  _ -> 0
+        Right e -> slotBlockInfo e
+      firstSlotOfEpoch = firstShellyBlock + (epochNo - 221) * epochLength
+
+  printf "Nonce: %s\n"                     nonce
+  printf "Active Slot Coefficient: %.3f\n" activeSlotCoefficient
+  printf "Epoch Length: %d\n"              epochLength
+  printf "Slot Length: %d\n"               slotLength
+  printf "First Slot of Epoch: %d\n"       firstSlotOfEpoch
+  printf "Active Stake (epoch %s): %s\n" (show epochNo) (prettyInt activeStake)
+  printf "Pool Active Stake: %s\n" (prettyInt poolActiveStake)
+  printf "Pool Sigma: %.9f\n"      poolSigma
