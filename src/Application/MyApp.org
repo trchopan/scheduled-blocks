@@ -2,7 +2,7 @@
 #+AUTHOR: Chop Tr (trchopan)
 #+DATE: <2022-01-27 Sat>
 
-* Getting all the variables
+* Getting all the ingredients
 
 ** The Epoch Nonce
 
@@ -186,41 +186,12 @@ firstSlotOfEpoch = (firstShellySlot) + (epochNumber - 211) * epochLength
 Note `epochNumber` must greater than 211
 
 
-* Calculate seed of a slot
+* Make Slot seed function
 
 ** Hash Blake2b
 
 https://hackage.haskell.org/package/cryptonite-0.21/docs/Crypto-Hash-Algorithms.html#t:Blake2b_512
 
-
-** Calculate Seed
-
-*** Neutral Seed (seedLBytes)
-
-#+begin_src python
-h = hashlib.blake2b(digest_size=32)
-h.update(bytearray([0, 0, 0, 0, 0, 0, 0, 1]))  # neutral nonce
-seedLbytes = h.digest()
-#+end_src
-
-
-*** Slot + Nonce Seed (slotToSeedBytes)
-
-#+begin_src python
-h = hashlib.blake2b(digest_size=32)
-h.update(slot.to_bytes(8, byteorder="big") + binascii.unhexlify(eta0))
-slotToSeedBytes = h.digest()
-#+end_src
-
-
-** Seed based on slot fomula
-
-#+begin_src python
-seed = [x ^ slotToSeedBytes[i] for i, x in enumerate(seedLbytes)]
-#+end_src
-
-
-* Make Slot seed
 
 ** Neutral Nonce
 
@@ -276,3 +247,27 @@ file: ~/usr/local/lib/libsodium.23.dylib~
 
 method: ~crypto_vrf_prove~
 
+** Cardano Praos
+
+[[https://github.com/input-output-hk/cardano-base/tree/master/cardano-crypto-praos][Cardano Praos]]
+
+Implement the FFI for libsodium
+
+Install by source: https://github.com/input-output-hk/libsodium
+
+#+begin_quote
+Libsodium Dependency
+This package depends on a custom fork of the libsodium C library, found at
+
+https://github.com/input-output-hk/libsodium/tree/tdammers/rebased-vrf
+#+end_quote
+
+#+begin_src bash
+git clone https://github.com/input-output-hk/libsodium
+cd libsodium
+git checkout tdammers/rebased-vrf
+./autogen.sh
+./configure
+make
+sudo make install
+#+end_src
