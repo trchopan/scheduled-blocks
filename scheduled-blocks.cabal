@@ -3,22 +3,17 @@ name:               scheduled-blocks
 version:            0.1.0.0
 
 -- A short (one-line) description of the package.
--- synopsis:
-
--- A longer description of the package.
--- description:
-
--- A URL where users can report bugs.
--- bug-reports:
+-- synopsis: Calculate the Epoch Nonce seeds and compare with the Pool sigma derived VRF key of the Pool to estimated the block assignments.
 
 -- The license under which the package is released.
--- license:
+-- license: MIT <https://opensource.org/licenses/MIT>
+
 author:             Quang Tran (Chop Tr)
 maintainer:         chop@chop.ink
 
 -- A copyright notice.
--- copyright:
--- category:
+-- copyright: Quang Tran (chop@chop.ink)
+-- category: cardano, blocks, pool operation
 extra-source-files: CHANGELOG.md
 
 common shared-properties

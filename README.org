@@ -7,6 +7,11 @@ No cardano-node Required, data is taken from [[blockfrost.io]] and [[https://arm
 This is rewritten in Haskell of the original [[https://github.com/asnakep/ScheduledBlocks][ScheduledBlocks]] in Python.
 
 
+* Tags
+
+cardano blockchain, block schedule, epoch, blockfrost, armada-alliance
+
+
 * License
 
 [[https://opensource.org/licenses/MIT][MIT]]
