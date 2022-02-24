@@ -1,5 +1,14 @@
 * scheduled-block
 
-This is rewritten in Haskell of the original [[https://github.com/asnakep/ScheduledBlocks][ScheduledBlocks]] in Python.
+Calculate the Epoch Nonce seeds and compare with the Pool sigma derived VRF key of the Pool to estimated the block assignments.
 
 No cardano-node Required, data is taken from [[blockfrost.io]] and [[https://armada-alliance.com][armada-alliance.com]] .
+
+This is rewritten in Haskell of the original [[https://github.com/asnakep/ScheduledBlocks][ScheduledBlocks]] in Python.
+
+
+* License
+
+[[https://opensource.org/licenses/MIT][MIT]]
+
+Copyright (c) 2022-, Quang Tran.
