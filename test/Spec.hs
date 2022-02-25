@@ -100,7 +100,6 @@ praosSpec sample = describe "Repository.Cardano.Crypto.VRF.Praos" $ do
     let expected = T.unpack $ certNatMaxTestSample sample
     show certNatMax `shouldBe` expected
 
-
   let vrfKeyStr = T.unpack (vrfSkeyTestSample sample)
   it "can load vrfSKey" $ do
     vrfSignKey <- loadVrfSkey "./test/vrf.skey"

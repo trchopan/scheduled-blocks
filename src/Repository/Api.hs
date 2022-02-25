@@ -1,9 +1,15 @@
 module Repository.Api where
 
+import           Control.Monad.IO.Class         ( MonadIO )
+import           Data.Aeson                     ( FromJSON
+                                                , eitherDecode
+                                                )
 import           Data.ByteString.UTF8           ( fromString )
 import           Network.HTTP.Client.Conduit    ( responseTimeoutMicro )
 import           Network.HTTP.Simple            ( Request
                                                 , defaultRequest
+                                                , getResponseBody
+                                                , httpLBS
                                                 , setRequestHeader
                                                 , setRequestHost
                                                 , setRequestMethod
@@ -20,6 +26,20 @@ toMicroseconds ms = ms * 1000 * 1000
 
 timeOutSeconds :: Int -> Int
 timeOutSeconds = toMicroseconds
+
+handleEitherFailOrResult :: Either String p -> p
+handleEitherFailOrResult e = do
+  case e of
+    Left  err -> error $ printf "Failed to handle result. Error: %s\n" err
+    Right v   -> v
+
+requestAndDecode :: (MonadIO m, FromJSON a) => Request -> m a
+requestAndDecode request =
+  httpLBS request
+    >>= return
+    .   handleEitherFailOrResult
+    .   eitherDecode
+    .   getResponseBody
 
 simpleRequest :: Method -> String -> String -> Request
 simpleRequest method host path =
@@ -47,8 +67,8 @@ getNextNonce = armdaRequest "/next"
 getCurrentNonce :: Request
 getCurrentNonce = armdaRequest "/current"
 
-blockFrostRequest :: String -> String -> Request
-blockFrostRequest apiKey path = do
+blockFrost :: String -> String -> Request
+blockFrost apiKey path = do
   setRequestHeader "project_id" [fromString apiKey]
     $  simpleGetRequest "cardano-mainnet.blockfrost.io"
     $  "/api/v0/"
@@ -56,23 +76,23 @@ blockFrostRequest apiKey path = do
 
 getEpochParam :: String -> Int -> Request
 getEpochParam apiKey epoch =
-  blockFrostRequest apiKey $ printf "/epochs/%d/parameters" epoch
+  blockFrost apiKey $ printf "/epochs/%d/parameters" epoch
 
 getEpochInfo :: String -> Int -> Request
 getEpochInfo apiKey epoch =
-  blockFrostRequest apiKey $ printf "/epochs/%d" epoch
+  blockFrost apiKey $ printf "/epochs/%d" epoch
 
 
 getPoolInfo :: String -> String -> Request
 getPoolInfo apiKey poolId =
-  blockFrostRequest apiKey $ printf "/pools/%s" poolId
+  blockFrost apiKey $ printf "/pools/%s" poolId
 
 getPoolHistory :: String -> String -> Request
 getPoolHistory apiKey poolId =
-  blockFrostRequest apiKey $ printf "/pools/%s/history" poolId
+  blockFrost apiKey $ printf "/pools/%s/history" poolId
 
 getBlockchainGenesis :: String -> Request
-getBlockchainGenesis apiKey = blockFrostRequest apiKey "/genesis"
+getBlockchainGenesis apiKey = blockFrost apiKey "/genesis"
 
 getFirstShellyBlock :: String -> Request
-getFirstShellyBlock apiKey = blockFrostRequest apiKey "/blocks/4555184"
+getFirstShellyBlock apiKey = blockFrost apiKey "/blocks/4555184"

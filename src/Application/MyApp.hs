@@ -40,6 +40,7 @@ import           Repository.Api                 ( getBlockchainGenesis
                                                 , getFirstShellyBlock
                                                 , getGlobal
                                                 , getPoolInfo
+                                                , requestAndDecode
                                                 )
 import           System.Exit                    ( ExitCode(ExitFailure)
                                                 , exitWith
@@ -56,84 +57,35 @@ epochSchedule = do
     Left  err     -> print ("Cannot get global. Err: " ++ err)
     Right cardano -> putStr $ unlines $ nextEpochs cardano 3
 
-
-handleLeftResponse :: String -> Either String b -> IO ()
-handleLeftResponse prefix e = case e of
-  Left err -> do
-    print ("Error handle " ++ prefix ++ ": " ++ err)
-    exitWith (ExitFailure 1)
-  Right _ -> return ()
-
-
 prettyInt :: Integer -> T.Text
 prettyInt = prettyF (PrettyCfg 0 (Just ',') '.') . toRational . toInteger
 
 epochBlockSchedule :: String -> String -> Int -> IO ()
 epochBlockSchedule blockFrostApi poolId epochNo = do
-  let _blockFrostApi = blockFrostApi
+  epochParams <-
+    requestAndDecode $ getEpochParam blockFrostApi epochNo :: IO EpochParameter
 
-  epochParamsResBs <- httpLBS $ getEpochParam _blockFrostApi epochNo
-  let eitherEpochParams =
-        eitherDecode (getResponseBody epochParamsResBs) :: Either
-            String
-            EpochParameter
+  epochInfo <-
+    requestAndDecode $ getEpochInfo blockFrostApi epochNo :: IO EpochInfo
 
-  handleLeftResponse "Getting Epoch Params" eitherEpochParams
+  genesis <-
+    requestAndDecode $ getBlockchainGenesis blockFrostApi :: IO
+      BlockchainGenesis
 
-  let nonce = case eitherEpochParams of
-        Left  _ -> ""
-        Right e -> nonceEpochParameter e
+  poolInfo <- requestAndDecode $ getPoolInfo blockFrostApi poolId :: IO PoolInfo
 
-  epochInfoResBs <- httpLBS $ getEpochInfo _blockFrostApi epochNo
-  let eitherEpochInfo =
-        eitherDecode (getResponseBody epochInfoResBs) :: Either String EpochInfo
+  firstShellyBlock <-
+    requestAndDecode $ getFirstShellyBlock blockFrostApi :: IO BlockInfo
 
-  handleLeftResponse "Getting EpochInfo" eitherEpochInfo
-
-  let activeStake = case eitherEpochInfo of
-        Left  _ -> 0
-        Right e -> activeStakeEpochInfo e
-
-
-  genesisResBs <- httpLBS $ getBlockchainGenesis _blockFrostApi
-  let eitherBlockGenesis =
-        eitherDecode (getResponseBody genesisResBs) :: Either
-            String
-            BlockchainGenesis
-
-  handleLeftResponse "Getting Genesis" eitherBlockGenesis
-
-  let (epochLength, activeSlotCoefficient, slotLength) =
-        case eitherBlockGenesis of
-          Left _ -> (0, 0, 0)
-          Right e ->
-            ( epochLengthBlockchainGenesis e
-            , activeSlotsCoefficientBlockchainGenesis e
-            , slotLengthBlockchainGenesis e
-            )
-
-  poolInfoBs <- httpLBS $ getPoolInfo _blockFrostApi poolId
-  let eitherPoolInfo =
-        eitherDecode (getResponseBody poolInfoBs) :: Either String PoolInfo
-
-  handleLeftResponse "Getting PoolInfo" eitherPoolInfo
-
-  let (poolSigma, poolActiveStake) = case eitherPoolInfo of
-        Left  _ -> (0, 0)
-        Right e -> (activeSizePoolInfo e, activeStakePoolInfo e)
-
-  firstShellyBlockBs <- httpLBS $ getFirstShellyBlock _blockFrostApi
-  let eitherFirstShellyBlock =
-        eitherDecode (getResponseBody firstShellyBlockBs) :: Either
-            String
-            BlockInfo
-
-  handleLeftResponse "Getting First Shelly Block" eitherFirstShellyBlock
-
-  let firstShellyBlock = case eitherFirstShellyBlock of
-        Left  _ -> 0
-        Right e -> slotBlockInfo e
-      firstSlotOfEpoch = firstShellyBlock + (epochNo - 221) * epochLength
+  let nonce                 = nonceEpochParameter epochParams
+      activeStake           = activeStakeEpochInfo epochInfo
+      epochLength           = epochLengthBlockchainGenesis genesis
+      activeSlotCoefficient = activeSlotsCoefficientBlockchainGenesis genesis
+      slotLength            = slotLengthBlockchainGenesis genesis
+      poolSigma             = activeSizePoolInfo poolInfo
+      poolActiveStake       = activeStakePoolInfo poolInfo
+      firstShellySlot       = slotBlockInfo firstShellyBlock
+      firstSlotOfEpoch      = firstShellySlot + (epochNo - 221) * epochLength
 
   printf "Nonce: %s\n"                     nonce
   printf "Active Slot Coefficient: %.3f\n" activeSlotCoefficient
