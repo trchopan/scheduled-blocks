@@ -37,6 +37,7 @@ common shared-properties
     , time
     , unordered-containers
     , utf8-string
+    , http-types
 
   default-extensions: OverloadedStrings
   ghc-options:        -Wunused-imports

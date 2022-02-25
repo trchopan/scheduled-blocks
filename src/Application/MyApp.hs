@@ -70,7 +70,7 @@ prettyInt = prettyF (PrettyCfg 0 (Just ',') '.') . toRational . toInteger
 
 epochBlockSchedule :: String -> String -> Int -> IO ()
 epochBlockSchedule blockFrostApi poolId epochNo = do
-  let _blockFrostApi = T.pack blockFrostApi
+  let _blockFrostApi = blockFrostApi
 
   epochParamsResBs <- httpLBS $ getEpochParam _blockFrostApi epochNo
   let eitherEpochParams =

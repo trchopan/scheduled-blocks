@@ -1,7 +1,6 @@
 module Repository.Api where
 
-import qualified Data.Text                     as T
-import qualified Data.Text.Encoding            as TSE
+import           Data.ByteString.UTF8           ( fromString )
 import           Network.HTTP.Client.Conduit    ( responseTimeoutMicro )
 import           Network.HTTP.Simple            ( Request
                                                 , defaultRequest
@@ -11,6 +10,9 @@ import           Network.HTTP.Simple            ( Request
                                                 , setRequestPath
                                                 , setRequestResponseTimeout
                                                 )
+import           Network.HTTP.Types             ( Method
+                                                , methodGet
+                                                )
 import           Text.Printf                    ( printf )
 
 toMicroseconds :: Int -> Int
@@ -19,21 +21,24 @@ toMicroseconds ms = ms * 1000 * 1000
 timeOutSeconds :: Int -> Int
 timeOutSeconds = toMicroseconds
 
-simpleGetRequest :: T.Text -> T.Text -> Request
-simpleGetRequest host path =
-  setRequestMethod "GET"
-    $ setRequestHost (TSE.encodeUtf8 host)
-    $ setRequestPath (TSE.encodeUtf8 path)
+simpleRequest :: Method -> String -> String -> Request
+simpleRequest method host path =
+  setRequestMethod method
+    $ setRequestHost (fromString host)
+    $ setRequestPath (fromString path)
     $ setRequestResponseTimeout (responseTimeoutMicro (timeOutSeconds 10))
     $ setRequestHeader "Content-Type" ["application/json"] defaultRequest
 
-adaPoolRequest :: T.Text -> Request
+simpleGetRequest :: String -> String -> Request
+simpleGetRequest = simpleRequest methodGet
+
+adaPoolRequest :: String -> Request
 adaPoolRequest = simpleGetRequest "js.adapools.org"
 
 getGlobal :: Request
 getGlobal = adaPoolRequest "/global.json"
 
-armdaRequest :: T.Text -> Request
+armdaRequest :: String -> Request
 armdaRequest = simpleGetRequest "nonce.armada-alliance.io"
 
 getNextNonce :: Request
@@ -42,31 +47,32 @@ getNextNonce = armdaRequest "/next"
 getCurrentNonce :: Request
 getCurrentNonce = armdaRequest "/current"
 
-blockFrostRequest :: T.Text -> T.Text -> Request
+blockFrostRequest :: String -> String -> Request
 blockFrostRequest apiKey path = do
-  setRequestHeader "project_id" [TSE.encodeUtf8 apiKey]
-    $ simpleGetRequest "cardano-mainnet.blockfrost.io"
-    $ T.concat ["/api/v0", path]
+  setRequestHeader "project_id" [fromString apiKey]
+    $  simpleGetRequest "cardano-mainnet.blockfrost.io"
+    $  "/api/v0/"
+    ++ path
 
-getEpochParam :: T.Text -> Int -> Request
+getEpochParam :: String -> Int -> Request
 getEpochParam apiKey epoch =
-  blockFrostRequest apiKey $ T.pack $ printf "/epochs/%d/parameters" epoch
+  blockFrostRequest apiKey $ printf "/epochs/%d/parameters" epoch
 
-getEpochInfo :: T.Text -> Int -> Request
+getEpochInfo :: String -> Int -> Request
 getEpochInfo apiKey epoch =
-  blockFrostRequest apiKey $ T.pack $ printf "/epochs/%d" epoch
+  blockFrostRequest apiKey $ printf "/epochs/%d" epoch
 
 
-getPoolInfo :: T.Text -> String -> Request
+getPoolInfo :: String -> String -> Request
 getPoolInfo apiKey poolId =
-  blockFrostRequest apiKey $ T.pack $ printf "/pools/%s" poolId
+  blockFrostRequest apiKey $ printf "/pools/%s" poolId
 
-getPoolHistory :: T.Text -> String -> Request
+getPoolHistory :: String -> String -> Request
 getPoolHistory apiKey poolId =
-  blockFrostRequest apiKey $ T.pack $ printf "/pools/%s/history" poolId
+  blockFrostRequest apiKey $ printf "/pools/%s/history" poolId
 
-getBlockchainGenesis :: T.Text -> Request
+getBlockchainGenesis :: String -> Request
 getBlockchainGenesis apiKey = blockFrostRequest apiKey "/genesis"
 
-getFirstShellyBlock :: T.Text -> Request
+getFirstShellyBlock :: String -> Request
 getFirstShellyBlock apiKey = blockFrostRequest apiKey "/blocks/4555184"
