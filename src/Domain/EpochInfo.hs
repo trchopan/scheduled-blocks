@@ -9,9 +9,8 @@ import           Data.Aeson                     ( (.:)
                                                 , object
                                                 , withObject
                                                 )
-import           Data.Int                       ( Int64 )
 import           Data.Text                      ( Text )
-import           Domain.ParseTool               ( parseInt64 )
+import           Domain.ParseTool               ( parseInteger )
 import           GHC.Generics                   ( Generic )
 
 data EpochInfo = EpochInfo
@@ -24,7 +23,7 @@ data EpochInfo = EpochInfo
   , txCountEpochInfo        :: Int
   , outputEpochInfo         :: Text
   , feesEpochInfo           :: Text
-  , activeStakeEpochInfo    :: Int64
+  , activeStakeEpochInfo    :: Integer
   }
   deriving (Show, Generic)
 
@@ -54,4 +53,4 @@ instance FromJSON EpochInfo where
       <*> (v .: "tx_count")
       <*> (v .: "output")
       <*> (v .: "fees")
-      <*> parseInt64 v "active_stake"
+      <*> parseInteger v "active_stake"

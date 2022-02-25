@@ -3,12 +3,6 @@ module Main where
 import           Application.MyApp              ( epochBlockSchedule
                                                 , epochSchedule
                                                 )
-import           Data.ByteString                ( ByteString )
-import           Data.ByteString.UTF8           ( toString )
-import           Infrastructure.Crypto          ( currentNonce
-                                                , encodeSlot
-                                                , seedLBytes
-                                                )
 import           System.Environment             ( getArgs
                                                 , getProgName
                                                 )

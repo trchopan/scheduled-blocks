@@ -34,6 +34,17 @@ parseInt64 v field = asum
   ]
 
 
+parseInteger :: Object -> Key -> Parser Integer
+parseInteger v field = asum
+  [ v .: field
+  , do
+    s <- v .: field
+    case readMaybe s :: Maybe Integer of
+      Nothing -> trace ("failed s=" ++ s) $ fail "not a number"
+      Just x  -> return x
+  ]
+
+
 parseFloat :: Object -> Key -> Parser Float
 parseFloat v field = asum
   [ v .: field

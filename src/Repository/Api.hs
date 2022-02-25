@@ -1,4 +1,4 @@
-module Infrastructure.Api where
+module Repository.Api where
 
 import qualified Data.Text                     as T
 import qualified Data.Text.Encoding            as TSE
@@ -16,15 +16,15 @@ import           Text.Printf                    ( printf )
 toMicroseconds :: Int -> Int
 toMicroseconds ms = ms * 1000 * 1000
 
-myResponseTimeout :: Int
-myResponseTimeout = toMicroseconds 10
+timeOutSeconds :: Int -> Int
+timeOutSeconds = toMicroseconds
 
 simpleGetRequest :: T.Text -> T.Text -> Request
 simpleGetRequest host path =
   setRequestMethod "GET"
     $ setRequestHost (TSE.encodeUtf8 host)
     $ setRequestPath (TSE.encodeUtf8 path)
-    $ setRequestResponseTimeout (responseTimeoutMicro myResponseTimeout)
+    $ setRequestResponseTimeout (responseTimeoutMicro (timeOutSeconds 10))
     $ setRequestHeader "Content-Type" ["application/json"] defaultRequest
 
 adaPoolRequest :: T.Text -> Request

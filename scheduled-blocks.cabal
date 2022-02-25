@@ -55,24 +55,25 @@ library
     Domain.PoolHistory
     Domain.PoolInfo
     Domain.VrfSkey
-    Infrastructure.Api
-    Infrastructure.Cardano.Crypto.VRF.Praos
-    Infrastructure.Crypto
-    Infrastructure.KeyFile
+    Repository.Api
+    Repository.Cardano.Crypto.VRF.Praos
+    Repository.Crypto
+    Repository.KeyFile
 
   extra-libraries: sodium
 
 executable scheduled-blocks
   import:         shared-properties
   main-is:        Main.hs
-  build-depends:  scheduled-blocks
   hs-source-dirs: app
-
-executable test
-  import:         shared-properties
-  main-is:        Main.hs
   build-depends:  scheduled-blocks
+
+test-suite test
+  import:         shared-properties
+  main-is:        Spec.hs
+  type:           exitcode-stdio-1.0
   hs-source-dirs: test
-  build-depends:
-    , tasty
-    , tasty-hspec
+  build-depends:  scheduled-blocks
+  build-depends:  hspec
+
+  other-modules:  TestSample

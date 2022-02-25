@@ -73,6 +73,4 @@ formatLocalTime = formatTime defaultTimeLocale "%Y-%m-%d %H:%M:%S"
 
 nextEpochs :: Cardano -> Int -> [String]
 nextEpochs cardano n =
-  [ (formatLocalTime . calculateNextEpoch cardano) i
-  | i <- take n [1 ..]
-  ]
+  [ (formatLocalTime . calculateNextEpoch cardano) i | i <- take n [1 ..] ]

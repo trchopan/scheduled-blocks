@@ -1,7 +1,9 @@
-module Application.MyApp where
+module Application.MyApp
+  ( epochSchedule
+  , epochBlockSchedule
+  ) where
 
 import           Data.Aeson                     ( eitherDecode )
-import           Data.Int                       ( Int64 )
 import qualified Data.Text                     as T
 import           Data.Text.Format.Numbers       ( PrettyCfg(PrettyCfg)
                                                 , prettyF
@@ -29,15 +31,15 @@ import           Domain.PoolInfo                ( PoolInfo
                                                   , activeStakePoolInfo
                                                   )
                                                 )
-import           Infrastructure.Api             ( getBlockchainGenesis
+import           Network.HTTP.Simple            ( getResponseBody
+                                                , httpLBS
+                                                )
+import           Repository.Api                 ( getBlockchainGenesis
                                                 , getEpochInfo
                                                 , getEpochParam
                                                 , getFirstShellyBlock
                                                 , getGlobal
                                                 , getPoolInfo
-                                                )
-import           Network.HTTP.Simple            ( getResponseBody
-                                                , httpLBS
                                                 )
 import           System.Exit                    ( ExitCode(ExitFailure)
                                                 , exitWith
@@ -63,8 +65,8 @@ handleLeftResponse prefix e = case e of
   Right _ -> return ()
 
 
-prettyInt :: Int64 -> T.Text
-prettyInt = prettyF (PrettyCfg 0 (Just ',') '.') . toRational
+prettyInt :: Integer -> T.Text
+prettyInt = prettyF (PrettyCfg 0 (Just ',') '.') . toRational . toInteger
 
 epochBlockSchedule :: String -> String -> Int -> IO ()
 epochBlockSchedule blockFrostApi poolId epochNo = do
