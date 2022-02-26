@@ -11,6 +11,7 @@ import           Data.ByteString.UTF8           ( fromString
                                                 , toString
                                                 )
 import qualified Data.Text                     as T
+import           GHC.Base                       ( eqFloat )
 import           Repository.Cardano.Crypto.VRF.Praos
                                                 ( outputBytes
                                                 , outputFromProof
@@ -134,7 +135,7 @@ praosSpec sample = describe "Repository.Cardano.Crypto.VRF.Praos" $ do
         certNat `shouldBe` read (T.unpack $ certNatSlot s)
 
       it "can calculate sigmaOfF" $ do
-        (sigmaOfF - expectSigmaOfF) < 0.00001 `shouldBe` True
+        sigmaOfF `eqFloat` expectSigmaOfF `shouldBe` True
 
 
   mapM_ withSlotTest (slotsTestSample sample)
