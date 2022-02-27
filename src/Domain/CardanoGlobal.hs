@@ -9,12 +9,7 @@ import           Data.Aeson                     ( (.:)
                                                 , object
                                                 , withObject
                                                 )
-import           Data.Time                      ( NominalDiffTime
-                                                , UTCTime
-                                                , addUTCTime
-                                                , defaultTimeLocale
-                                                , formatTime
-                                                )
+import           Data.Time                      ( UTCTime )
 import           Domain.ParseTool               ( parseInt
                                                 , parseUTCTime
                                                 )
@@ -47,30 +42,3 @@ instance ToJSON Cardano where
     , "epochStarted" .= epochStarted p
     , "endedBefore" .= endedBefore p
     ]
-
-data ArmdaNonce = ArmdaNonce
-  { epoch :: Int
-  , nonce :: String
-  }
-
-instance FromJSON ArmdaNonce where
-  parseJSON = withObject "ArmdaNonce"
-    $ \v -> ArmdaNonce <$> parseInt v "epoch" <*> v .: "nonce"
-
-instance ToJSON ArmdaNonce where
-  toJSON p = object ["epoch" .= epoch p, "nonce" .= nonce p]
-
-secondsInDay :: NominalDiffTime
-secondsInDay = 24 * 60 * 60
-
-calculateNextEpoch :: Cardano -> Int -> UTCTime
-calculateNextEpoch cardano n = addUTCTime
-  ((fromRational . toRational) n * 5 * secondsInDay)
-  (epochStarted cardano)
-
-formatLocalTime :: UTCTime -> String
-formatLocalTime = formatTime defaultTimeLocale "%Y-%m-%d %H:%M:%S"
-
-nextEpochs :: Cardano -> Int -> [String]
-nextEpochs cardano n =
-  [ (formatLocalTime . calculateNextEpoch cardano) i | i <- take n [1 ..] ]

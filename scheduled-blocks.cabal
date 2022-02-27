@@ -30,14 +30,13 @@ common shared-properties
     , directory
     , format-numbers
     , http-conduit
+    , http-types
     , memory
     , random
-    , stm-chans
     , text
     , time
     , unordered-containers
     , utf8-string
-    , http-types
 
   default-extensions: OverloadedStrings
   ghc-options:        -Wunused-imports
@@ -46,7 +45,9 @@ library
   import:          shared-properties
   hs-source-dirs:  src
   exposed-modules:
+    Application.Cardano
     Application.MyApp
+    Domain.ArmadaNonce
     Domain.BlockchainGenesis
     Domain.BlockInfo
     Domain.CardanoGlobal
@@ -58,7 +59,6 @@ library
     Domain.VrfSkey
     Repository.Api
     Repository.Cardano.Crypto.VRF.Praos
-    Repository.Crypto
     Repository.KeyFile
 
   extra-libraries: sodium
@@ -70,11 +70,15 @@ executable scheduled-blocks
   build-depends:  scheduled-blocks
 
 test-suite test
-  import:         shared-properties
-  main-is:        Spec.hs
-  type:           exitcode-stdio-1.0
-  hs-source-dirs: test
-  build-depends:  scheduled-blocks
-  build-depends:  hspec
+  import:             shared-properties
+  main-is:            Spec.hs
+  type:               exitcode-stdio-1.0
+  hs-source-dirs:     test
+  build-depends:      scheduled-blocks
+  build-depends:      hspec
+  other-modules:
+    LoadSample
+    TestSample
 
-  other-modules:  TestSample
+  ghc-options:        -Wall
+  build-tool-depends: hspec-discover:hspec-discover ==2.*

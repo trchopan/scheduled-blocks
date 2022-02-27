@@ -54,7 +54,8 @@ module Repository.Cardano.Crypto.VRF.Praos
   , prove
   , verify
 
-  -- * My thing
+  -- * SignKey
+  , SignKey
   , skFromBytes
   , outputFromProof
   ) where

@@ -9,7 +9,9 @@ import           Data.Aeson                     ( (.:)
                                                 , object
                                                 , withObject
                                                 )
+import           Data.Int                       ( Int64 )
 import           Data.Text                      ( Text )
+import           Domain.ParseTool               ( parseInt64 )
 import           GHC.Generics                   ( Generic )
 
 data BlockchainGenesis = BlockchainGenesis
@@ -17,7 +19,7 @@ data BlockchainGenesis = BlockchainGenesis
   , updateQuorumBlockchainGenesis           :: Int
   , maxLovelaceSupplyBlockchainGenesis      :: Text
   , networkMagicBlockchainGenesis           :: Int
-  , epochLengthBlockchainGenesis            :: Int
+  , epochLengthBlockchainGenesis            :: Int64
   , systemStartBlockchainGenesis            :: Int
   , slotsPerKesPeriodBlockchainGenesis      :: Int
   , slotLengthBlockchainGenesis             :: Int
@@ -47,7 +49,7 @@ instance FromJSON BlockchainGenesis where
       <*> (v .: "update_quorum")
       <*> (v .: "max_lovelace_supply")
       <*> (v .: "network_magic")
-      <*> (v .: "epoch_length")
+      <*> parseInt64 v "epoch_length"
       <*> (v .: "system_start")
       <*> (v .: "slots_per_kes_period")
       <*> (v .: "slot_length")

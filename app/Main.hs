@@ -20,8 +20,8 @@ main = do
     ["epoch-schedule"] -> epochSchedule
 
     -- Calculate current epoch
-    [blockFrostApi, poolId, epochStr] | [(epochNo, _)] <- reads epochStr ->
-      epochBlockSchedule blockFrostApi poolId epochNo
+    [blockFrostApi, poolId, epochStr, vrfFilePath] | [(epochNo, _)] <- reads epochStr ->
+      epochBlockSchedule blockFrostApi poolId epochNo vrfFilePath
 
     -- Print help
     _ -> do

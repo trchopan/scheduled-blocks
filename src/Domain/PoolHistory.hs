@@ -10,13 +10,14 @@ import           Data.Aeson                     ( (.:)
                                                 , withObject
                                                 )
 import           Data.Text                      ( Text )
+import           Domain.ParseTool               ( parseInteger )
 import           GHC.Generics                   ( Generic )
 
 
 data PoolHistory = PoolHistory
   { epochPoolHistory           :: Int
   , blocksPoolHistory          :: Int
-  , activeStakePoolHistory     :: Text
+  , activeStakePoolHistory     :: Integer
   , activeSizePoolHistory      :: Float
   , delegatorsCountPoolHistory :: Int
   , rewardsPoolHistory         :: Text
@@ -40,7 +41,7 @@ instance FromJSON PoolHistory where
     PoolHistory
       <$> (v .: "epoch")
       <*> (v .: "blocks")
-      <*> (v .: "active_stake")
+      <*> parseInteger v "active_stake"
       <*> (v .: "active_size")
       <*> (v .: "delegators_count")
       <*> (v .: "rewards")

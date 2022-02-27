@@ -9,14 +9,16 @@ import           Data.Aeson                     ( (.:)
                                                 , object
                                                 , withObject
                                                 )
+import           Data.Int                       ( Int64 )
 import           Data.Text                      ( Text )
+import           Domain.ParseTool               ( parseInt64 )
 import           GHC.Generics                   ( Generic )
 
 data BlockInfo = BlockInfo
   { timeBlockInfo          :: Int
   , heightBlockInfo        :: Int
   , hashBlockInfo          :: Text
-  , slotBlockInfo          :: Int
+  , slotBlockInfo          :: Int64
   , epochBlockInfo         :: Int
   , epochSlotBlockInfo     :: Int
   , slotLeaderBlockInfo    :: Text
@@ -56,7 +58,7 @@ instance FromJSON BlockInfo where
       <$> (v .: "time")
       <*> (v .: "height")
       <*> (v .: "hash")
-      <*> (v .: "slot")
+      <*> parseInt64 v "slot"
       <*> (v .: "epoch")
       <*> (v .: "epoch_slot")
       <*> (v .: "slot_leader")
