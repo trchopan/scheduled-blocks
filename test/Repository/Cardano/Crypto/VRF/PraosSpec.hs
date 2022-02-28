@@ -2,8 +2,8 @@ module Repository.Cardano.Crypto.VRF.PraosSpec
   ( spec
   ) where
 
-import           Application.Cardano            ( bytestringToNatural
-                                                , certNatMax
+import           Application.CardanoHelpers     ( certNatMax )
+import           Application.CommonHelpers      ( bytestringToNatural
                                                 , decodeBS
                                                 )
 import           Data.ByteString.Base16         ( encode )

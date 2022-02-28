@@ -19,10 +19,10 @@ extra-source-files: CHANGELOG.md
 common shared-properties
   default-language:   Haskell2010
   build-depends:
-    , aeson                 ^>=2.0.1.0
+    , aeson                  ^>=2.0.1.0
     , aeson-pretty
     , async
-    , base                  ^>=4.14.3.0
+    , base                   ^>=4.14.3.0
     , base16-bytestring
     , binary
     , bytestring
@@ -32,7 +32,9 @@ common shared-properties
     , http-conduit
     , http-types
     , memory
+    , optparse-applicative
     , random
+    , terminal-progress-bar
     , text
     , time
     , unordered-containers
@@ -45,8 +47,10 @@ library
   import:          shared-properties
   hs-source-dirs:  src
   exposed-modules:
-    Application.Cardano
-    Application.MyApp
+    Application.CardanoHelpers
+    Application.CommonHelpers
+    Application.HistoryBlocks
+    Application.NextBlocks
     Domain.ArmadaNonce
     Domain.BlockchainGenesis
     Domain.BlockInfo
@@ -77,7 +81,9 @@ test-suite test
   build-depends:      scheduled-blocks
   build-depends:      hspec
   other-modules:
+    Application.CardanoSpec
     LoadSample
+    Repository.Cardano.Crypto.VRF.PraosSpec
     TestSample
 
   ghc-options:        -Wall

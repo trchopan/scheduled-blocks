@@ -6,7 +6,6 @@ import           Data.Text                      ( unpack )
 import           Domain.VrfSkey                 ( VrfSkey(cborHexVrfSkey) )
 
 
-
 loadVrfSkey :: FilePath -> IO VrfSkey
 loadVrfSkey filepath = do
   result <- eitherDecode <$> LBS.readFile filepath :: IO (Either String VrfSkey)

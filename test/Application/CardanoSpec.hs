@@ -2,28 +2,24 @@ module Application.CardanoSpec
   ( spec
   ) where
 
-import           Application.Cardano            ( decodeBS
-                                                , hashBlake2b
-                                                , jan_1_1970_time
+import           Application.CardanoHelpers     ( hashBlake2b
                                                 , mkSeed
                                                 , seedLBytes
                                                 , slotToSeedBytes
                                                 , slotToTime
+                                                )
+import           Application.CommonHelpers      ( decodeBS
                                                 , textToBS
                                                 )
 import           Data.ByteString.Base16         ( encode )
 import           Data.ByteString.UTF8           ( fromString )
 import qualified Data.Text                     as T
 import           Data.Time                      ( defaultTimeLocale
-                                                , hoursToTimeZone
                                                 , parseTimeOrError
                                                 )
 import           GHC.IO                         ( bracket )
 import           LoadSample                     ( readTestSampleOrError )
-import           Test.Hspec                     ( ActionWith
-                                                , Arg
-                                                , Expectation
-                                                , Spec
+import           Test.Hspec                     ( Spec
                                                 , SpecWith
                                                 , around
                                                 , describe

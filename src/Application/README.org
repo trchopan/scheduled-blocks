@@ -223,7 +223,7 @@ slotToSeedBytes slot nonce = hashBlake2b $ BS.append encodedSlot nonce
 
 ** mkSeed function
 
-Then the =mkSeed= function is a simple ~zip~
+Then the =mkSeed= function is a simple ~zipWith xor~
 
 #+begin_src haskell
 -- For every seedLBytes xor it with the slotSeedBytes
@@ -246,6 +246,7 @@ A dynamic library
 file: ~/usr/local/lib/libsodium.23.dylib~
 
 method: ~crypto_vrf_prove~
+
 
 ** Cardano Praos
 
