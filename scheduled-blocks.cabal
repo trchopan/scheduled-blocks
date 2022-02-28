@@ -54,7 +54,6 @@ library
     Domain.ArmadaNonce
     Domain.BlockchainGenesis
     Domain.BlockInfo
-    Domain.CardanoGlobal
     Domain.EpochInfo
     Domain.EpochParameter
     Domain.ParseTool

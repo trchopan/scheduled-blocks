@@ -1,8 +1,6 @@
 module Application.CardanoHelpers where
 
 import           Application.CommonHelpers      ( bytestringToNatural
-                                                , formatLocalTime
-                                                , secondsInDay
                                                 , utcFromSecs
                                                 )
 import           Crypto.Hash                    ( Blake2b_256()
@@ -16,18 +14,7 @@ import           Data.ByteString                ( ByteString )
 import qualified Data.ByteString               as BS
 import qualified Data.ByteString.Lazy          as LSB
 import           Data.Int                       ( Int64 )
-import           Data.Time                      ( UTCTime(UTCTime)
-                                                , addUTCTime
-                                                , defaultTimeLocale
-                                                , formatTime
-                                                , fromGregorian
-                                                , hoursToTimeZone
-                                                , secondsToDiffTime
-                                                , utcToLocalTime
-                                                )
-import           Domain.CardanoGlobal           ( Cardano(epochStarted)
-                                                , epochStarted
-                                                )
+import           Data.Time                      ( UTCTime )
 import           Repository.Cardano.Crypto.VRF.Praos
                                                 ( outputBytes
                                                 , outputFromProof
@@ -61,17 +48,6 @@ mkSeed seedLBytes slotToSeedBytes = BS.pack
  where
   arrSeedLBytes      = BA.unpack seedLBytes
   arrSlotToSeedBytes = BA.unpack slotToSeedBytes
-
-calculateNextEpoch :: UTCTime -> Int -> UTCTime
-calculateNextEpoch epochStarted n = addUTCTime
-  ((fromRational . toRational) n * 5 * secondsInDay) -- 1 epoch = 5 days
-  epochStarted
-
-nextEpochs :: Cardano -> Int -> [String]
-nextEpochs cardano n =
-  [ (formatLocalTime . calculateNextEpoch (epochStarted cardano)) i
-  | i <- take n [1 ..]
-  ]
 
 slotToTime :: Int64 -> UTCTime
 slotToTime slot = utcFromSecs (slot + 1591566291)

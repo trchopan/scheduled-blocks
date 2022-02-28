@@ -49,12 +49,6 @@ simpleRequest method host path =
 simpleGetRequest :: String -> String -> Request
 simpleGetRequest = simpleRequest methodGet
 
-adaPoolRequest :: String -> Request
-adaPoolRequest = simpleGetRequest "js.adapools.org"
-
-getGlobal :: Request
-getGlobal = adaPoolRequest "/global.json"
-
 armadaRequest :: String -> Request
 armadaRequest = simpleGetRequest "nonce.armada-alliance.io"
 
