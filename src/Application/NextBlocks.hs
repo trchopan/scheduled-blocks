@@ -9,9 +9,10 @@ import           Application.CardanoHelpers     ( isSlotLeader
                                                 )
 import           Application.CommonHelpers      ( decodeBS
                                                 , formatLocalTime
+                                                , percentageProcessBar
                                                 , prettyInt
                                                 , textToBS
-                                                , withStatusMessage, percentageProcessBar
+                                                , withStatusMessage
                                                 )
 import           Control.Monad                  ( forM_
                                                 , when
@@ -48,7 +49,9 @@ import           Repository.Api                 ( getBlockchainGenesis
 import           Repository.KeyFile             ( loadVrfSkey
                                                 , poolVrfSkey
                                                 )
-import           System.ProgressBar
+import           System.ProgressBar             ( Progress(Progress)
+                                                , updateProgress
+                                                )
 import           Text.Printf                    ( printf )
 
 
