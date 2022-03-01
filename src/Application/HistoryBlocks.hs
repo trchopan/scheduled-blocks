@@ -8,10 +8,10 @@ import           Application.CardanoHelpers     ( isSlotLeader
                                                 , slotToTime
                                                 )
 import           Application.CommonHelpers      ( decodeBS
-                                                , formatLocalTime
                                                 , percentageProcessBar
                                                 , prettyInt
                                                 , textToBS
+                                                , timeToString
                                                 , withStatusMessage
                                                 )
 import           Control.Monad                  ( forM_
@@ -19,6 +19,7 @@ import           Control.Monad                  ( forM_
                                                 )
 import           Data.ByteString.UTF8           ( fromString )
 import           Data.List                      ( find )
+import           Data.Time                      ( getCurrentTimeZone )
 import           Domain.ArmadaNonce             ( ArmadaNonce(epochArmadaNonce)
                                                 )
 import           Domain.BlockInfo               ( BlockInfo(slotBlockInfo) )
@@ -148,9 +149,9 @@ historyBlocks (HistoryBlocksArgs blockFrostApi epoch poolId vrfFilePath) = do
   printf "Pool Sigma: %.9f\n"      poolSigma
 
   vrfSignKey <- loadVrfSkey vrfFilePath
+  tz         <- getCurrentTimeZone
   let vrfSkeyBytes = (decodeBS . fromString) (poolVrfSkey vrfSignKey)
       decodedNonce = decodeBS $ textToBS nonce
-
       slotsOfEpoch = [firstSlotOfEpoch .. firstSlotOfEpoch + epochLength]
       sigmaOfF     = mkSigmaOfF activeSlotCoeff poolSigma
 
@@ -161,7 +162,7 @@ historyBlocks (HistoryBlocksArgs blockFrostApi epoch poolId vrfFilePath) = do
       $ putStrLn
       $ printf "Slot %d block assigned. Time %s\n"
                slot
-               (formatLocalTime $ slotToTime slot)
+               (timeToString (slotToTime slot) tz)
 
     let percentDone =
           round

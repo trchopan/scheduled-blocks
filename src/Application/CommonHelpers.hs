@@ -13,14 +13,14 @@ import           Data.Text.Format.Numbers       ( PrettyCfg(PrettyCfg)
                                                 )
 import           Data.Time                      ( Day
                                                 , NominalDiffTime
+                                                , TimeZone
                                                 , UTCTime(UTCTime)
                                                 , addUTCTime
                                                 , defaultTimeLocale
                                                 , formatTime
                                                 , fromGregorian
-                                                , hoursToTimeZone
                                                 , secondsToDiffTime
-                                                , utcToLocalTime
+                                                , utcToZonedTime
                                                 )
 import           GHC.IO                         ( unsafePerformIO )
 import           Numeric                        ( readHex )
@@ -92,9 +92,9 @@ utcFromSecs secs = addUTCTime (fromIntegral secs) jan_1_1970_time
 secondsInDay :: NominalDiffTime
 secondsInDay = 24 * 60 * 60
 
-formatLocalTime :: UTCTime -> String
-formatLocalTime t = formatTime defaultTimeLocale "%Y-%m-%d %H:%M:%S %z" t'
-  where t' = utcToLocalTime (hoursToTimeZone 7) t
+timeToString :: UTCTime -> TimeZone -> String
+timeToString t tz = formatTime defaultTimeLocale "%Y-%m-%d %H:%M:%S %z" t'
+  where t' = utcToZonedTime tz t
 
 percentageProcessBar :: IO (ProgressBar ())
 percentageProcessBar = do
