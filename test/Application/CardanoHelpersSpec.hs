@@ -1,4 +1,4 @@
-module Application.CardanoSpec
+module Application.CardanoHelpersSpec
   ( spec
   ) where
 

@@ -80,7 +80,7 @@ test-suite test
   build-depends:      scheduled-blocks
   build-depends:      hspec
   other-modules:
-    Application.CardanoSpec
+    Application.CardanoHelpersSpec
     LoadSample
     Repository.Cardano.Crypto.VRF.PraosSpec
     TestSample
