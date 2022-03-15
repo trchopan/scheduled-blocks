@@ -4,7 +4,7 @@
 
 #+TITLE: scheduled-blocks
 #+AUTHOR: Chop Tr (chop.ink)
-#+DATE: <2022-02-24 Thu>
+#+DATE: <2022-03-01 Tue>
 #+DESCRIPTION: Use the Epoch Nonce seeds and compare with the Pool sigma derived VRF key of the Pool to calculate the block assignment schedule.
 
 

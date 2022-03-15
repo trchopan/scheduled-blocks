@@ -1,4 +1,4 @@
-#+TITLE: MyApp
+#+TITLE: Application Note
 #+AUTHOR: Chop Tr (trchopan)
 #+DATE: <2022-01-27 Sat>
 

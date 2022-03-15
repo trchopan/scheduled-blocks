@@ -53,7 +53,7 @@ main = do
   optsParser = info
     (helper <*> versionOption <*> programOptions)
     (  fullDesc
-    <> progDesc "scheduled-blocks history example"
+    <> progDesc "scheduled-blocks (history|next) <options>"
     <> header
          "scheduled-blocks - a small program for checking the blocks schedule of given epoch on Cardano blockchain"
     )
