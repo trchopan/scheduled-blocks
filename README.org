@@ -22,14 +22,7 @@ This is a rewritten in Haskell of the [[https://github.com/asnakep/ScheduledBloc
 Get the scheduled block in past epoch (current epoch included)
 
 
-** next
-
-Get the scheduled block for the next epoch by query the nonce from ~armada-aliance~.
-
-Note: Next nonce is announce 1.5 days before the end of current epoch.
-
-
-** Example
+*** Example
 
 #+begin_src
 $ scheduled-blocks history --epoch 321 \
@@ -56,6 +49,60 @@ Slot 53309568 block assigned. Time 2022-02-15 04:57:39 +0700
 Working [==================>......]  74%
 #+end_src
 
+
+** next
+
+Get the scheduled block for the next epoch by query the nonce from ~armada-aliance~.
+
+Note: Next nonce is announce 1.5 days before the end of current epoch.
+
+
+** persistReport
+
+Perform the epoch schedule calculation for all epoch starting from ~--fromEpoch~ flag to current epoch.
+
+With each iteration save the block schedule into file in ~output~ directory, under file name ~<epoch>.json~ name.
+
+
+*** Example
+
+#+begin_src
+$ scheduled-blocks persistReport --output ./block-schedules/ --fromEpoch 321 --blockFrostApi $BLOCKFROST_API --poolId $POOL_ID --vrfSkey ~/vrf.skey
+Checking current network epoch...done
+./block-schedules/321.json file not exist
+================================================================================
+Checking current network epoch...done
+Checking Pool Sigma from Pool History...done
+Checking epoch parameters...done
+Checking epoch info for active stake...done
+Checking network genenis...done
+Checking first Shelly block...done
+Epoch: 321
+Nonce: 97be25ab0a46a6537faaf32f882de17611c897f32c7eeef12f53a176b225e461
+Active Slot Coefficient: 0.050
+Epoch Length: 432000
+Slot Length: 1
+First Slot of Epoch: 53308800
+Last Slot of Epoch: 53740800
+Active Stake (epoch 321): 23,537,719,498,083,358
+Pool Active Stake: 916,392,141,238
+Pool Sigma: 0.000038933
+Slot 53309568 block assigned. Time 2022-02-15 04:57:39 +0700
+
+Slot 53719603 block assigned. Time 2022-02-19 22:51:34 +0700
+
+CPU time:  69.54s
+already check epoch 322
+[]
+
+already check epoch 323
+[
+    {
+        "slot": 54456018,
+        "time": "2022-02-28T04:25:09Z"
+    }
+]
+#+end_src
 
 * Tags
 
