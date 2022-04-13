@@ -13,7 +13,7 @@ import           Application.HistoryBlocks      ( HistoryBlocksArgs
 import           Control.Monad                  ( forM_ )
 import           Data.Aeson.Encode.Pretty       ( encodePretty )
 import           Data.Text.Lazy.Encoding        ( decodeUtf8 )
-import qualified Data.Text.Lazy.IO             as I
+import qualified Data.Text.Lazy.IO             as LIO
 import           Domain.ArmadaNonce             ( ArmadaNonce
                                                   ( ArmadaNonce
                                                   , epochArmadaNonce
@@ -66,7 +66,7 @@ persistReport fromEpoch filePath (PersistReportArgs blockFrostApi poolId vrfFile
           let schedules =
                 map (\slot -> Schedule slot (slotToTime slot)) leaderSlots
               newDbReport = EpochSchedules epoch (length leaderSlots) schedules
-          I.writeFile (filePath ++ show epoch ++ ".json")
+          LIO.writeFile (filePath ++ show epoch ++ ".json")
             $ decodeUtf8
             $ encodePretty newDbReport
 
