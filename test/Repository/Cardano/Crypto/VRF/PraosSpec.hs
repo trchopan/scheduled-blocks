@@ -4,7 +4,7 @@ module Repository.Cardano.Crypto.VRF.PraosSpec
 
 import           Application.CardanoHelpers     ( certNatMax )
 import           Application.CommonHelpers      ( bytestringToNatural
-                                                , decodeBS
+                                                , decodeB16OrError
                                                 )
 import           Data.ByteString.Base16         ( encode )
 import           Data.ByteString.UTF8           ( fromString
@@ -71,12 +71,12 @@ praosSpec = do
         it "can calculate proof and sigmaOfF" $ \sample -> do
           let
             vrfKeyStr   = T.unpack (vrfSkeyTestSample sample)
-            vrfKeyBytes = (decodeBS . fromString) vrfKeyStr
+            vrfKeyBytes = (decodeB16OrError . fromString) vrfKeyStr
             vrfKey      = skFromBytes vrfKeyBytes
             withSlotTest :: Slot -> IO ()
             withSlotTest s = do
               let
-                seed       = decodeBS $ fromString $ T.unpack $ mkSeedSlot s
+                seed       = decodeB16OrError $ fromString $ T.unpack $ mkSeedSlot s
                 maybeProof = prove vrfKey seed
                 proofHash =
                   maybe "" (maybe "" outputBytes . outputFromProof) maybeProof

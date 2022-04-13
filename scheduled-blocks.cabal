@@ -37,6 +37,7 @@ common shared-properties
     , terminal-progress-bar
     , text
     , time
+    , timeit
     , unordered-containers
     , utf8-string
 
@@ -51,9 +52,11 @@ library
     Application.CommonHelpers
     Application.HistoryBlocks
     Application.NextBlocks
+    Application.PersistReport
     Domain.ArmadaNonce
     Domain.BlockchainGenesis
     Domain.BlockInfo
+    Domain.EpochSchedules
     Domain.EpochInfo
     Domain.EpochParameter
     Domain.ParseTool
@@ -62,6 +65,7 @@ library
     Domain.VrfSkey
     Repository.Api
     Repository.Cardano.Crypto.VRF.Praos
+    Repository.Db
     Repository.KeyFile
 
   extra-libraries: sodium
@@ -71,6 +75,7 @@ executable scheduled-blocks
   main-is:        Main.hs
   hs-source-dirs: app
   build-depends:  scheduled-blocks
+  ghc-options:    -threaded
 
 test-suite test
   import:             shared-properties
@@ -81,6 +86,7 @@ test-suite test
   build-depends:      hspec
   other-modules:
     Application.CardanoHelpersSpec
+    Application.PersistReportSpec
     LoadSample
     Repository.Cardano.Crypto.VRF.PraosSpec
     TestSample

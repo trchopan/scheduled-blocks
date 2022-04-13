@@ -8,7 +8,7 @@ import           Application.CardanoHelpers     ( hashBlake2b
                                                 , slotToSeedBytes
                                                 , slotToTime
                                                 )
-import           Application.CommonHelpers      ( decodeBS
+import           Application.CommonHelpers      ( decodeB16OrError
                                                 , textToBS
                                                 )
 import           Data.ByteString.Base16         ( encode )
@@ -59,7 +59,7 @@ mkSeedSpec =
           let withSlotTest :: Slot -> IO ()
               withSlotTest s = do
                 let slotNumber = slotSlot s
-                    decodedNonce = decodeBS $ textToBS $ nonceTestSample sample
+                    decodedNonce = decodeB16OrError $ textToBS $ nonceTestSample sample
                     seedBytes = slotToSeedBytes slotNumber decodedNonce
                     hashedSeedBytes = hashBlake2b seedBytes
                     expectedSlotSeedBytes = T.unpack (slotToSeedBytesSlot s)

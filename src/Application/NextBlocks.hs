@@ -7,7 +7,7 @@ import           Application.CardanoHelpers     ( isSlotLeader
                                                 , mkSigmaOfF
                                                 , slotToTime
                                                 )
-import           Application.CommonHelpers      ( decodeBS
+import           Application.CommonHelpers      ( decodeB16OrError
                                                 , percentageProcessBar
                                                 , prettyInt
                                                 , textToBS
@@ -115,8 +115,9 @@ nextBlocks (NextBlocksArgs blockFrostApi poolId vrfFilePath) = do
 
   vrfSignKey <- loadVrfSkey vrfFilePath
   tz         <- getCurrentTimeZone
-  let vrfSkeyBytes = (decodeBS . fromString) (poolVrfSkey vrfSignKey)
-      decodedNonce = decodeBS $ textToBS nonce
+
+  let vrfSkeyBytes = (decodeB16OrError . fromString) (poolVrfSkey vrfSignKey)
+      decodedNonce = decodeB16OrError $ textToBS nonce
       slotsOfEpoch = [firstSlotOfEpoch .. firstSlotOfEpoch + epochLength]
       sigmaOfF     = mkSigmaOfF activeSlotCoeff poolSigma
 

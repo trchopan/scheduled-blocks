@@ -1,9 +1,7 @@
 module Application.CommonHelpers where
 
 import           Data.ByteString                ( ByteString )
-import           Data.ByteString.Base16         ( decode
-                                                , encode
-                                                )
+import qualified Data.ByteString.Base16        as B16
 import           Data.ByteString.UTF8           ( fromString
                                                 , toString
                                                 )
@@ -22,7 +20,6 @@ import           Data.Time                      ( Day
                                                 , secondsToDiffTime
                                                 , utcToZonedTime
                                                 )
-import           GHC.IO                         ( unsafePerformIO )
 import           Numeric                        ( readHex )
 import           System.ProgressBar             ( OnComplete(Clear)
                                                 , Progress(Progress)
@@ -67,14 +64,13 @@ prettyInt = prettyF (PrettyCfg 0 (Just ',') '.') . toRational . toInteger
 textToBS :: T.Text -> ByteString
 textToBS = fromString . T.unpack
 
-decodeBS :: ByteString -> ByteString
-decodeBS bs = unsafePerformIO $ do
-  case decode bs of
-    Left  err -> error "cannot decode"
-    Right x   -> return x
+decodeB16OrError :: ByteString -> ByteString
+decodeB16OrError bs = case B16.decode bs of
+  Left  err -> error "cannot decode"
+  Right x   -> x
 
 bytestringToNatural :: ByteString -> Integer
-bytestringToNatural = fromRead . readHex . toString . encode
+bytestringToNatural = fromRead . readHex . toString . B16.encode
  where
   fromRead :: [(Integer, String)] -> Integer
   fromRead []       = 0
