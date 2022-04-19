@@ -104,6 +104,52 @@ already check epoch 323
 ]
 #+end_src
 
+
+* Build
+
+** libsodium
+
+This tool depends on =libsodium= for the calculation of the crypto vrf seed bytes.
+
+Install by source: https://github.com/input-output-hk/libsodium
+
+#+begin_src bash
+git clone https://github.com/input-output-hk/libsodium
+cd libsodium
+git checkout tdammers/rebased-vrf
+./autogen.sh
+./configure
+make
+sudo make install
+#+end_src
+
+
+** GHC
+
+Recommend to use GHCup https://www.haskell.org/ghcup/
+
+Use =ghcup tui= to select:
+
+- ghc ~8.10.7~
+- cabal ~3.6.0.0~
+
+** Build
+
+#+begin_src bash
+cabal build
+
+# If you don't have correct lib path for libsodium, it can be provide in cabal option
+# cabal build --extra-lib-dirs=/usr/local/lib
+#+end_src
+
+
+* WIP
+
+I'm trying to implement concurrency code for the slot leader calculation. At the moment, speed not yet change much as I'm still learning Haskell and the implementation may not correct.
+
+If you like to try out the concurrency code. It can be run using RTS flag: =+RTS -N4= where 4 is the number of available cores.
+
+
 * Tags
 
 cardano blockchain, block schedule, epoch, blockfrost, armada-alliance

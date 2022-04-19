@@ -258,6 +258,7 @@ Install by source: https://github.com/input-output-hk/libsodium
 
 #+begin_quote
 Libsodium Dependency
+
 This package depends on a custom fork of the libsodium C library, found at
 
 https://github.com/input-output-hk/libsodium/tree/tdammers/rebased-vrf
