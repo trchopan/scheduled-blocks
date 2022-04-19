@@ -1,6 +1,7 @@
+{-# LANGUAGE LambdaCase #-}
+
 module Application.HistoryBlocks
   ( historyBlocks
-  , historyBlocksDummy
   , HistoryBlocksArgs(HistoryBlocksArgs)
   , checkLeaderSlots
   , getCheckLeaderArgs
@@ -18,9 +19,22 @@ import           Application.CommonHelpers      ( decodeB16OrError
                                                 , timeToString
                                                 , withStatusMessage
                                                 )
-import           Control.Monad                  ( when )
+import           Control.Concurrent             ( Chan
+                                                , ThreadId
+                                                , forkIO
+                                                , newChan
+                                                , readChan
+                                                , writeChan
+                                                )
+import           Control.Monad                  ( replicateM_
+                                                , when
+                                                )
 import           Data.ByteString                ( ByteString )
 import           Data.ByteString.UTF8           ( fromString )
+import           Data.IORef                     ( IORef
+                                                , atomicModifyIORef
+                                                , newIORef
+                                                )
 import           Data.Int                       ( Int64 )
 import           Data.List                      ( find )
 import           Data.Time                      ( getCurrentTimeZone )
@@ -79,11 +93,6 @@ data HistoryBlocksArgs = HistoryBlocksArgs
   , vrfFilePath   :: String
   }
 
-historyBlocksDummy :: HistoryBlocksArgs -> IO ()
-historyBlocksDummy (HistoryBlocksArgs blockFrostApi epoch poolId vrfFilePath) =
-  do
-    putStrLn $ printf "Doing epoch %d\n" epoch
-
 
 data CheckLeaderArgs = CheckLeaderArgs
   { vrfSkeyBytes     :: ByteString
@@ -92,6 +101,7 @@ data CheckLeaderArgs = CheckLeaderArgs
   , firstSlotOfEpoch :: Int64
   , epochLength      :: Int64
   }
+
 
 getCheckLeaderArgs :: HistoryBlocksArgs -> IO CheckLeaderArgs
 getCheckLeaderArgs (HistoryBlocksArgs blockFrostApi epoch poolId vrfFilePath) =
@@ -182,6 +192,62 @@ getCheckLeaderArgs (HistoryBlocksArgs blockFrostApi epoch poolId vrfFilePath) =
                              epochLength
 
 
+worker
+  :: CheckLeaderArgs
+  -> IORef [Int64]
+  -> Chan (Int, Int64, Bool)
+  -> Int
+  -> IO ThreadId
+worker (CheckLeaderArgs vrfSkeyBytes nonceBytes sigmaOfF firstSlotOfEpoch epochLength) requestsRef responseChan workerId
+  = forkIO $ do
+    let loop = do
+          mint <- atomicModifyIORef requestsRef $ \case
+            []          -> ([], Nothing)
+            slot : rest -> (rest, Just slot)
+
+          case mint of
+            Nothing   -> return ()
+            Just slot -> do
+              writeChan
+                responseChan
+                ( workerId
+                , slot
+                , isSlotLeader sigmaOfF nonceBytes vrfSkeyBytes slot
+                )
+              loop
+
+    -- Kick off the loop
+    loop
+
+
+checkLeaderSlotsConcurrent :: CheckLeaderArgs -> IO ()
+checkLeaderSlotsConcurrent lArgs = do
+  let
+    (CheckLeaderArgs vrfSkeyBytes nonceBytes sigmaOfF firstSlotOfEpoch epochLength)
+      = lArgs
+    slotsOfEpoch = [firstSlotOfEpoch .. firstSlotOfEpoch + epochLength]
+    workerCount  = 1000
+  requestsRef  <- newIORef slotsOfEpoch
+  responseChan <- newChan
+  tz           <- getCurrentTimeZone
+  pb           <- percentageProcessBar
+
+  mapM_ (worker lArgs requestsRef responseChan) [1 .. workerCount]
+
+  replicateM_ (length slotsOfEpoch) $ do
+    (workerId, slot, isLeader) <- readChan responseChan
+    when isLeader $ putStrLn $ printf "Slot %d block assigned. Time %s\n"
+                                      slot
+                                      (timeToString (slotToTime slot) tz)
+
+    let percentDone =
+          round
+            $ 100
+            * toRational (slot - firstSlotOfEpoch)
+            / toRational epochLength
+    updateProgress pb (\_ -> Progress percentDone 100 ())
+
+
 checkLeaderSlots :: CheckLeaderArgs -> IO [Int64]
 checkLeaderSlots (CheckLeaderArgs vrfSkeyBytes nonceBytes sigmaOfF firstSlotOfEpoch epochLength)
   = do
@@ -214,5 +280,6 @@ checkLeaderSlots (CheckLeaderArgs vrfSkeyBytes nonceBytes sigmaOfF firstSlotOfEp
 historyBlocks :: HistoryBlocksArgs -> IO ()
 historyBlocks hArgs = do
   lArgs <- getCheckLeaderArgs hArgs
-  timeIt $ checkLeaderSlots lArgs
+  timeIt $ checkLeaderSlotsConcurrent lArgs
+  -- timeIt $ checkLeaderSlots lArgs
   return ()

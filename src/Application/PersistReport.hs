@@ -7,8 +7,6 @@ import           Application.HistoryBlocks      ( HistoryBlocksArgs
                                                   )
                                                 , checkLeaderSlots
                                                 , getCheckLeaderArgs
-                                                , historyBlocks
-                                                , historyBlocksDummy
                                                 )
 import           Control.Monad                  ( forM_ )
 import           Data.Aeson.Encode.Pretty       ( encodePretty )
@@ -66,8 +64,6 @@ persistReport fromEpoch filePath (PersistReportArgs blockFrostApi poolId vrfFile
           let schedules =
                 map (\slot -> Schedule slot (slotToTime slot)) leaderSlots
               newDbReport = EpochSchedules epoch (length leaderSlots) schedules
-          LIO.writeFile (filePath ++ show epoch ++ ".json")
-            $ decodeUtf8
-            $ encodePretty newDbReport
+          LIO.writeFile epochFilePath $ decodeUtf8 $ encodePretty newDbReport
 
     putStrLn "Finished"

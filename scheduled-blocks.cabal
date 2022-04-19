@@ -56,9 +56,9 @@ library
     Domain.ArmadaNonce
     Domain.BlockchainGenesis
     Domain.BlockInfo
-    Domain.EpochSchedules
     Domain.EpochInfo
     Domain.EpochParameter
+    Domain.EpochSchedules
     Domain.ParseTool
     Domain.PoolHistory
     Domain.PoolInfo
@@ -75,7 +75,7 @@ executable scheduled-blocks
   main-is:        Main.hs
   hs-source-dirs: app
   build-depends:  scheduled-blocks
-  ghc-options:    -threaded
+  ghc-options:    -threaded -rtsopts
 
 test-suite test
   import:             shared-properties
