@@ -133,12 +133,13 @@ Use =ghcup tui= to select:
 - ghc ~8.10.7~
 - cabal ~3.6.0.0~
 
+
 ** Build
 
 #+begin_src bash
 cabal build
 
-# If you don't have correct lib path for libsodium, it can be provide in cabal option
+# If cabal cannot find the correct lib path for libsodium, it can be provided by
 # cabal build --extra-lib-dirs=/usr/local/lib
 #+end_src
 
