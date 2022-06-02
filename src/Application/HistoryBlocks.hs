@@ -258,11 +258,9 @@ checkLeaderSlots (CheckLeaderArgs vrfSkeyBytes nonceBytes sigmaOfF firstSlotOfEp
     result <- mapM
       (\slot -> do
         let isLeader = isSlotLeader sigmaOfF nonceBytes vrfSkeyBytes slot
-        when (isSlotLeader sigmaOfF nonceBytes vrfSkeyBytes slot)
-          $ putStrLn
-          $ printf "Slot %d block assigned. Time %s\n"
-                   slot
-                   (timeToString (slotToTime slot) tz)
+        when isLeader $ putStrLn $ printf "Slot %d block assigned. Time %s\n"
+                                          slot
+                                          (timeToString (slotToTime slot) tz)
 
         let percentDone =
               round

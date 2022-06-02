@@ -12,10 +12,7 @@ import           Control.Monad                  ( forM_ )
 import           Data.Aeson.Encode.Pretty       ( encodePretty )
 import           Data.Text.Lazy.Encoding        ( decodeUtf8 )
 import qualified Data.Text.Lazy.IO             as LIO
-import           Domain.ArmadaNonce             ( ArmadaNonce
-                                                  ( ArmadaNonce
-                                                  , epochArmadaNonce
-                                                  )
+import           Domain.ArmadaNonce             ( ArmadaNonce(epochArmadaNonce)
                                                 )
 import           Domain.EpochSchedules          ( EpochSchedules
                                                   ( EpochSchedules
