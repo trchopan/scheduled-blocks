@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 module Application.CardanoHelpers where
 
 import           Application.CommonHelpers      ( bytestringToNatural
@@ -12,7 +13,7 @@ import           Data.Bits                      ( Bits(xor) )
 import qualified Data.ByteArray                as BA
 import           Data.ByteString                ( ByteString )
 import qualified Data.ByteString               as BS
-import qualified Data.ByteString.Lazy          as LSB
+import qualified Data.ByteString.Lazy          as LBS
 import           Data.Int                       ( Int64 )
 import           Data.Time                      ( UTCTime )
 import           Repository.Cardano.Crypto.VRF.Praos
@@ -39,7 +40,7 @@ seedLBytes = hashBlake2b neutral
 
 slotToSeedBytes :: Int64 -> ByteString -> ByteString
 slotToSeedBytes slot = BS.append encodedSlot
-  where encodedSlot = LSB.toStrict $ Binary.encode slot
+  where encodedSlot = LBS.toStrict $ Binary.encode slot
 
 -- For every seedLBytes xor it with the slotSeedBytes
 mkSeed :: Digest Blake2b_256 -> Digest Blake2b_256 -> ByteString

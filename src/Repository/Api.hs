@@ -61,9 +61,8 @@ getCurrentNonce = armadaRequest "/current"
 blockFrost :: String -> String -> Request
 blockFrost apiKey path = do
   setRequestHeader "project_id" [fromString apiKey]
-    $  simpleGetRequest "cardano-mainnet.blockfrost.io"
-    $  "/api/v0"
-    ++ path
+    $ simpleGetRequest "cardano-mainnet.blockfrost.io"
+    $ printf "/api/v0/%s" path
 
 getEpochParam :: String -> Int -> Request
 getEpochParam apiKey epoch =
