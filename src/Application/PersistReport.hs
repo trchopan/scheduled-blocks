@@ -12,7 +12,9 @@ import           Control.Monad                  ( forM_ )
 import           Data.Aeson.Encode.Pretty       ( encodePretty )
 import           Data.Text.Lazy.Encoding        ( decodeUtf8 )
 import qualified Data.Text.Lazy.IO             as LIO
-import           Domain.ArmadaNonce             ( ArmadaNonce(epochArmadaNonce)
+import           Domain.EpochParameter          ( EpochParameter
+                                                  ( epochEpochParameter
+                                                  )
                                                 )
 import           Domain.EpochSchedules          ( EpochSchedules
                                                   ( EpochSchedules
@@ -20,7 +22,7 @@ import           Domain.EpochSchedules          ( EpochSchedules
                                                   )
                                                 , Schedule(Schedule)
                                                 )
-import           Repository.Api                 ( getCurrentNonce
+import           Repository.Api                 ( getLatestEpochParam
                                                 , requestAndDecode
                                                 )
 import           Repository.Db                  ( loadEpochSchedules )
@@ -38,11 +40,12 @@ data PersistReportArgs = PersistReportArgs
 persistReport :: Int -> FilePath -> PersistReportArgs -> IO ()
 persistReport fromEpoch filePath (PersistReportArgs blockFrostApi poolId vrfFilePath)
   = do
-    armadaNonce <-
+    latestEpoch <-
       withStatusMessage "Checking current network epoch..."
-        $ requestAndDecode getCurrentNonce :: IO ArmadaNonce
+      $ requestAndDecode
+      $ getLatestEpochParam blockFrostApi :: IO EpochParameter
 
-    let currentEpoch = epochArmadaNonce armadaNonce
+    let currentEpoch = epochEpochParameter latestEpoch
 
     forM_ [fromEpoch .. currentEpoch] $ \epoch -> do
       let epochFilePath = filePath ++ show epoch ++ ".json"

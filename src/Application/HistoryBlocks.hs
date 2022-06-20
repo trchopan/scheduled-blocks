@@ -38,8 +38,6 @@ import           Data.IORef                     ( IORef
 import           Data.Int                       ( Int64 )
 import           Data.List                      ( find )
 import           Data.Time                      ( getCurrentTimeZone )
-import           Domain.ArmadaNonce             ( ArmadaNonce(epochArmadaNonce)
-                                                )
 import           Domain.BlockInfo               ( BlockInfo(slotBlockInfo) )
 import           Domain.BlockchainGenesis       ( BlockchainGenesis
                                                   ( activeSlotsCoefficientBlockchainGenesis
@@ -52,7 +50,8 @@ import           Domain.EpochInfo               ( EpochInfo
                                                   )
                                                 )
 import           Domain.EpochParameter          ( EpochParameter
-                                                  ( nonceEpochParameter
+                                                  ( epochEpochParameter
+                                                  , nonceEpochParameter
                                                   )
                                                 )
 import           Domain.PoolHistory             ( PoolHistory
@@ -67,10 +66,10 @@ import           Domain.PoolInfo                ( PoolInfo
                                                   )
                                                 )
 import           Repository.Api                 ( getBlockchainGenesis
-                                                , getCurrentNonce
                                                 , getEpochInfo
                                                 , getEpochParam
                                                 , getFirstShellyBlock
+                                                , getLatestEpochParam
                                                 , getPoolHistory
                                                 , getPoolInfo
                                                 , requestAndDecode
@@ -107,11 +106,12 @@ getCheckLeaderArgs :: HistoryBlocksArgs -> IO CheckLeaderArgs
 getCheckLeaderArgs (HistoryBlocksArgs blockFrostApi epoch poolId vrfFilePath) =
   do
     putStrLn $ concat $ replicate 80 "="
-    armadaNonce <-
+    latestEpoch <-
       withStatusMessage "Checking current network epoch..."
-        $ requestAndDecode getCurrentNonce :: IO ArmadaNonce
+      $ requestAndDecode
+      $ getLatestEpochParam blockFrostApi :: IO EpochParameter
 
-    let currentEpoch = epochArmadaNonce armadaNonce
+    let currentEpoch = epochEpochParameter latestEpoch
 
     when
       (epoch > currentEpoch)
@@ -227,6 +227,7 @@ checkLeaderSlotsConcurrent lArgs = do
       = lArgs
     slotsOfEpoch = [firstSlotOfEpoch .. firstSlotOfEpoch + epochLength]
     workerCount  = 1000
+
   requestsRef  <- newIORef slotsOfEpoch
   responseChan <- newChan
   tz           <- getCurrentTimeZone
@@ -234,7 +235,7 @@ checkLeaderSlotsConcurrent lArgs = do
 
   mapM_ (worker lArgs requestsRef responseChan) [1 .. workerCount]
 
-  replicateM_ (length slotsOfEpoch) $ do
+  replicateM_ (fromIntegral epochLength) $ do
     (workerId, slot, isLeader) <- readChan responseChan
     when isLeader $ putStrLn $ printf "Slot %d block assigned. Time %s\n"
                                       slot
@@ -249,31 +250,33 @@ checkLeaderSlotsConcurrent lArgs = do
 
 
 checkLeaderSlots :: CheckLeaderArgs -> IO [Int64]
-checkLeaderSlots (CheckLeaderArgs vrfSkeyBytes nonceBytes sigmaOfF firstSlotOfEpoch epochLength)
-  = do
-    let slotsOfEpoch = [firstSlotOfEpoch .. firstSlotOfEpoch + epochLength]
-    tz     <- getCurrentTimeZone
-    pb     <- percentageProcessBar
+checkLeaderSlots lArgs = do
+  let
+    (CheckLeaderArgs vrfSkeyBytes nonceBytes sigmaOfF firstSlotOfEpoch epochLength)
+      = lArgs
+    slotsOfEpoch = [firstSlotOfEpoch .. firstSlotOfEpoch + epochLength]
+  tz     <- getCurrentTimeZone
+  pb     <- percentageProcessBar
 
-    result <- mapM
-      (\slot -> do
-        let isLeader = isSlotLeader sigmaOfF nonceBytes vrfSkeyBytes slot
-        when isLeader $ putStrLn $ printf "Slot %d block assigned. Time %s\n"
-                                          slot
-                                          (timeToString (slotToTime slot) tz)
+  result <- mapM
+    (\slot -> do
+      let isLeader = isSlotLeader sigmaOfF nonceBytes vrfSkeyBytes slot
+      when isLeader $ putStrLn $ printf "Slot %d block assigned. Time %s\n"
+                                        slot
+                                        (timeToString (slotToTime slot) tz)
 
-        let percentDone =
-              round
-                $ 100
-                * toRational (slot - firstSlotOfEpoch)
-                / toRational epochLength
-        updateProgress pb (\_ -> Progress percentDone 100 ())
+      let percentDone =
+            round
+              $ 100
+              * toRational (slot - firstSlotOfEpoch)
+              / toRational epochLength
+      updateProgress pb (\_ -> Progress percentDone 100 ())
 
-        return (slot, isLeader)
-      )
-      slotsOfEpoch
+      return (slot, isLeader)
+    )
+    slotsOfEpoch
 
-    return $ map fst $ filter snd result
+  return $ map fst $ filter snd result
 
 historyBlocks :: HistoryBlocksArgs -> IO ()
 historyBlocks hArgs = do

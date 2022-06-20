@@ -31,7 +31,7 @@ timeOutSeconds = toMicroseconds
 eitherResultOrError :: Either String p -> p
 eitherResultOrError e = do
   case e of
-    Left  err -> error $ printf "Failed to handle result. Error: %s\n" err
+    Left  err -> error $ printf "Failed to handle result. %s\n" err
     Right v   -> v
 
 requestAndDecode :: (MonadIO m, FromJSON a) => Request -> m a
@@ -63,6 +63,9 @@ blockFrost apiKey path = do
   setRequestHeader "project_id" [fromString apiKey]
     $ simpleGetRequest "cardano-mainnet.blockfrost.io"
     $ printf "/api/v0/%s" path
+
+getLatestEpochParam :: String -> Request
+getLatestEpochParam apiKey = blockFrost apiKey "/epochs/latest/parameters"
 
 getEpochParam :: String -> Int -> Request
 getEpochParam apiKey epoch =
