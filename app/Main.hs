@@ -13,6 +13,7 @@ import           Application.PersistReport      ( PersistReportArgs
                                                   )
                                                 , persistReport
                                                 )
+import           Control.Concurrent             ( rtsSupportsBoundThreads )
 import           Options.Applicative            ( CommandFields
                                                 , Mod
                                                 , Parser
@@ -32,6 +33,7 @@ import           Options.Applicative            ( CommandFields
                                                 , progDesc
                                                 , strOption
                                                 )
+import           Text.Printf                    ( printf )
 
 data Opts = Opts
   { blockFrostApi :: String
@@ -47,6 +49,9 @@ data Command
 
 main :: IO ()
 main = do
+  -- Check concurrent
+  putStrLn $ printf "Concurrency support %s" (show rtsSupportsBoundThreads)
+
   opts <- execParser optsParser
   case optCommand opts of
     HistoryBlocksCmd epoch -> historyBlocks
