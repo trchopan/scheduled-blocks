@@ -34,6 +34,7 @@ common shared-properties
     , memory
     , optparse-applicative
     , random
+    , stm
     , terminal-progress-bar
     , text
     , time

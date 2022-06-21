@@ -19,22 +19,13 @@ import           Application.CommonHelpers      ( decodeB16OrError
                                                 , timeToString
                                                 , withStatusMessage
                                                 )
-import           Control.Concurrent             ( Chan
-                                                , ThreadId
-                                                , forkIO
-                                                , newChan
-                                                , readChan
-                                                , writeChan
-                                                )
+import           Control.Concurrent
+import           Control.Concurrent.STM
 import           Control.Monad                  ( replicateM_
                                                 , when
                                                 )
 import           Data.ByteString                ( ByteString )
 import           Data.ByteString.UTF8           ( fromString )
-import           Data.IORef                     ( IORef
-                                                , atomicModifyIORef
-                                                , newIORef
-                                                )
 import           Data.Int                       ( Int64 )
 import           Data.List                      ( find )
 import           Data.Time                      ( getCurrentTimeZone )
@@ -52,6 +43,7 @@ import           Domain.EpochInfo               ( EpochInfo
 import           Domain.EpochParameter          ( EpochParameter
                                                   ( epochEpochParameter
                                                   , nonceEpochParameter
+                                                  , priceMemEpochParameter
                                                   )
                                                 )
 import           Domain.PoolHistory             ( PoolHistory
@@ -192,32 +184,28 @@ getCheckLeaderArgs (HistoryBlocksArgs blockFrostApi epoch poolId vrfFilePath) =
                              epochLength
 
 
-worker
-  :: CheckLeaderArgs
-  -> IORef [Int64]
-  -> Chan (Int, Int64, Bool)
-  -> Int
-  -> IO ThreadId
-worker (CheckLeaderArgs vrfSkeyBytes nonceBytes sigmaOfF firstSlotOfEpoch epochLength) requestsRef responseChan workerId
-  = forkIO $ do
-    let loop = do
-          mint <- atomicModifyIORef requestsRef $ \case
-            []          -> ([], Nothing)
-            slot : rest -> (rest, Just slot)
+-- ([<LeaderSlot>], <Numer of finished slots>)
+type Result = TVar ([Int64], Int64)
 
-          case mint of
-            Nothing   -> return ()
-            Just slot -> do
-              writeChan
-                responseChan
-                ( workerId
-                , slot
-                , isSlotLeader sigmaOfF nonceBytes vrfSkeyBytes slot
-                )
-              loop
 
-    -- Kick off the loop
-    loop
+addToResult :: CheckLeaderArgs -> Result -> Int64 -> STM ()
+addToResult args result slot = do
+  (leaderSlots, endCtr) <- readTVar result
+
+  let
+    (CheckLeaderArgs vrfSkeyBytes nonceBytes sigmaOfF firstSlotOfEpoch epochLength)
+      = args
+    newLeaderSlots = if isSlotLeader sigmaOfF nonceBytes vrfSkeyBytes slot
+      then leaderSlots ++ [slot]
+      else leaderSlots
+
+  writeTVar result (newLeaderSlots, endCtr + 1)
+
+
+waitForResult :: Result -> Int64 -> STM [Int64]
+waitForResult result limit = do
+  (leaderSlots, endCtr) <- readTVar result
+  if endCtr < limit then retry else return leaderSlots
 
 
 checkLeaderSlotsConcurrent :: CheckLeaderArgs -> IO ()
@@ -226,27 +214,17 @@ checkLeaderSlotsConcurrent lArgs = do
     (CheckLeaderArgs vrfSkeyBytes nonceBytes sigmaOfF firstSlotOfEpoch epochLength)
       = lArgs
     slotsOfEpoch = [firstSlotOfEpoch .. firstSlotOfEpoch + epochLength]
-    workerCount  = 1000
 
-  requestsRef  <- newIORef slotsOfEpoch
-  responseChan <- newChan
-  tz           <- getCurrentTimeZone
-  pb           <- percentageProcessBar
+  -- tz     <- getCurrentTimeZone
+  -- pb     <- percentageProcessBar
 
-  mapM_ (worker lArgs requestsRef responseChan) [1 .. workerCount]
+  result <- newTVarIO ([], 0)
+  mapM_ (forkIO . atomically . addToResult lArgs result) slotsOfEpoch
 
-  replicateM_ (fromIntegral epochLength) $ do
-    (workerId, slot, isLeader) <- readChan responseChan
-    when isLeader $ putStrLn $ printf "Slot %d block assigned. Time %s\n"
-                                      slot
-                                      (timeToString (slotToTime slot) tz)
+  leaderSlots <- atomically
+    $ waitForResult result (fromIntegral $ length slotsOfEpoch)
 
-    let percentDone =
-          round
-            $ 100
-            * toRational (slot - firstSlotOfEpoch)
-            / toRational epochLength
-    updateProgress pb (\_ -> Progress percentDone 100 ())
+  putStrLn $ printf "Slots: %s" (show leaderSlots)
 
 
 checkLeaderSlots :: CheckLeaderArgs -> IO [Int64]
