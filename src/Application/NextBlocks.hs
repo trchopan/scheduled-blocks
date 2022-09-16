@@ -107,11 +107,9 @@ nextBlocks (NextBlocksArgs blockFrostApi poolId vrfFilePath) = do
   printf "Slot Length: %d\n"               slotLength
   printf "First Slot of Epoch: %d\n"       firstSlotOfEpoch
   printf "Last Slot of Epoch: %d\n"        (firstSlotOfEpoch + epochLength)
-  printf "Active Stake (epoch %s): %s\n"
-         (show nextEpoch)
-         (prettyInt activeStake)
-  printf "Pool Active Stake: %s\n" (prettyInt poolActiveStake)
-  printf "Pool Sigma: %.9f\n"      poolSigma
+  printf "Active Stake: %s\n"              (prettyInt activeStake)
+  printf "Pool Active Stake: %s\n"         (prettyInt poolActiveStake)
+  printf "Pool Sigma: %.9f\n"              poolSigma
 
   vrfSignKey <- loadVrfSkey vrfFilePath
   tz         <- getCurrentTimeZone

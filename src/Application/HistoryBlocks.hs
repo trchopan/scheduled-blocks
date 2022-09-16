@@ -1,5 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
-
 module Application.HistoryBlocks
   ( historyBlocks
   , HistoryBlocksArgs(HistoryBlocksArgs)
@@ -21,9 +19,7 @@ import           Application.CommonHelpers      ( decodeB16OrError
                                                 )
 import           Control.Concurrent
 import           Control.Concurrent.STM
-import           Control.Monad                  ( replicateM_
-                                                , when
-                                                )
+import           Control.Monad                  ( when )
 import           Data.ByteString                ( ByteString )
 import           Data.ByteString.UTF8           ( fromString )
 import           Data.Int                       ( Int64 )
@@ -43,7 +39,6 @@ import           Domain.EpochInfo               ( EpochInfo
 import           Domain.EpochParameter          ( EpochParameter
                                                   ( epochEpochParameter
                                                   , nonceEpochParameter
-                                                  , priceMemEpochParameter
                                                   )
                                                 )
 import           Domain.PoolHistory             ( PoolHistory
@@ -168,9 +163,9 @@ getCheckLeaderArgs (HistoryBlocksArgs blockFrostApi epoch poolId vrfFilePath) =
     printf "Slot Length: %d\n"               slotLength
     printf "First Slot of Epoch: %d\n"       firstSlotOfEpoch
     printf "Last Slot of Epoch: %d\n"        (firstSlotOfEpoch + epochLength)
-    printf "Active Stake (epoch %s): %s\n" (show epoch) (prettyInt activeStake)
-    printf "Pool Active Stake: %s\n" (prettyInt poolActiveStake)
-    printf "Pool Sigma: %.9f\n"      poolSigma
+    printf "Active Stake : %s\n"             (prettyInt activeStake)
+    printf "Pool Active Stake: %s\n"         (prettyInt poolActiveStake)
+    printf "Pool Sigma: %.9f\n"              poolSigma
 
     vrfSignKey <- loadVrfSkey vrfFilePath
     let vrfSkeyBytes = (decodeB16OrError . fromString) (poolVrfSkey vrfSignKey)
