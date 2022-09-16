@@ -10,12 +10,21 @@ import           Application.CardanoHelpers     ( isSlotLeader
                                                 , mkSigmaOfF
                                                 , slotToTime
                                                 )
-import           Application.CommonHelpers      ( decodeB16OrError
+import           Application.CommonHelpers      ( PrintInfomation
+                                                  ( PrintInfomation
+                                                  )
+                                                , decodeB16OrError
+                                                , epochInfoRequest
+                                                , epochParamRequest
+                                                , firstShellyBlockRequest
+                                                , genesisRequest
+                                                , latestEpochRequest
                                                 , percentageProcessBar
-                                                , prettyInt
+                                                , poolHistoryRequest
+                                                , poolInfoRequest
+                                                , printInformation
                                                 , textToBS
                                                 , timeToString
-                                                , withStatusMessage
                                                 )
 import           Control.Concurrent
 import           Control.Concurrent.STM
@@ -52,15 +61,6 @@ import           Domain.PoolInfo                ( PoolInfo
                                                   , activeStakePoolInfo
                                                   )
                                                 )
-import           Repository.Api                 ( getBlockchainGenesis
-                                                , getEpochInfo
-                                                , getEpochParam
-                                                , getFirstShellyBlock
-                                                , getLatestEpochParam
-                                                , getPoolHistory
-                                                , getPoolInfo
-                                                , requestAndDecode
-                                                )
 import           Repository.KeyFile             ( loadVrfSkey
                                                 , poolVrfSkey
                                                 )
@@ -93,11 +93,7 @@ getCheckLeaderArgs :: HistoryBlocksArgs -> IO CheckLeaderArgs
 getCheckLeaderArgs (HistoryBlocksArgs blockFrostApi epoch poolId vrfFilePath) =
   do
     putStrLn $ concat $ replicate 80 "="
-    latestEpoch <-
-      withStatusMessage "Checking current network epoch..."
-      $ requestAndDecode
-      $ getLatestEpochParam blockFrostApi :: IO EpochParameter
-
+    latestEpoch <- latestEpochRequest blockFrostApi
     let currentEpoch = epochEpochParameter latestEpoch
 
     when
@@ -110,41 +106,20 @@ getCheckLeaderArgs (HistoryBlocksArgs blockFrostApi epoch poolId vrfFilePath) =
 
     (poolSigma, poolActiveStake) <- if currentEpoch == epoch
       then do
-        poolInfo <-
-          withStatusMessage "Checking Pool Sigma of Current Epoch..."
-          $ requestAndDecode
-          $ getPoolInfo blockFrostApi poolId :: IO PoolInfo
+        poolInfo <- poolInfoRequest blockFrostApi poolId
         return (activeSizePoolInfo poolInfo, activeStakePoolInfo poolInfo)
       else do
-        poolHistories <-
-          withStatusMessage "Checking Pool Sigma from Pool History..."
-          $ requestAndDecode
-          $ getPoolHistory blockFrostApi poolId :: IO [PoolHistory]
+        poolHistories <- poolHistoryRequest blockFrostApi poolId
         case find (\ph -> epochPoolHistory ph == epoch) poolHistories of
           Nothing ->
             error ("Cannot find pool history for epoch " ++ show epoch)
           Just ph ->
             return (activeSizePoolHistory ph, activeStakePoolHistory ph)
 
-    epochParams <-
-      withStatusMessage "Checking epoch parameters..."
-      $ requestAndDecode
-      $ getEpochParam blockFrostApi epoch :: IO EpochParameter
-
-    epochInfo <-
-      withStatusMessage "Checking epoch info for active stake..."
-      $ requestAndDecode
-      $ getEpochInfo blockFrostApi epoch :: IO EpochInfo
-
-    genesis <-
-      withStatusMessage "Checking network genenis..."
-      $ requestAndDecode
-      $ getBlockchainGenesis blockFrostApi :: IO BlockchainGenesis
-
-    firstShellyBlock <-
-      withStatusMessage "Checking first Shelly block..."
-      $ requestAndDecode
-      $ getFirstShellyBlock blockFrostApi :: IO BlockInfo
+    epochParams      <- epochParamRequest blockFrostApi epoch
+    epochInfo        <- epochInfoRequest blockFrostApi epoch
+    genesis          <- genesisRequest blockFrostApi
+    firstShellyBlock <- firstShellyBlockRequest blockFrostApi
 
     let
       nonce           = nonceEpochParameter epochParams
@@ -156,16 +131,16 @@ getCheckLeaderArgs (HistoryBlocksArgs blockFrostApi epoch poolId vrfFilePath) =
       firstSlotOfEpoch =
         firstShellySlot + (fromIntegral epoch - 211) * epochLength
 
-    printf "Epoch: %d\n"                     epoch
-    printf "Nonce: %s\n"                     nonce
-    printf "Active Slot Coefficient: %.3f\n" activeSlotCoeff
-    printf "Epoch Length: %d\n"              epochLength
-    printf "Slot Length: %d\n"               slotLength
-    printf "First Slot of Epoch: %d\n"       firstSlotOfEpoch
-    printf "Last Slot of Epoch: %d\n"        (firstSlotOfEpoch + epochLength)
-    printf "Active Stake : %s\n"             (prettyInt activeStake)
-    printf "Pool Active Stake: %s\n"         (prettyInt poolActiveStake)
-    printf "Pool Sigma: %.9f\n"              poolSigma
+    printInformation
+      (PrintInfomation nonce
+                       activeSlotCoeff
+                       epochLength
+                       slotLength
+                       firstSlotOfEpoch
+                       activeStake
+                       poolActiveStake
+                       poolSigma
+      )
 
     vrfSignKey <- loadVrfSkey vrfFilePath
     let vrfSkeyBytes = (decodeB16OrError . fromString) (poolVrfSkey vrfSignKey)
@@ -181,7 +156,6 @@ getCheckLeaderArgs (HistoryBlocksArgs blockFrostApi epoch poolId vrfFilePath) =
 
 -- ([<LeaderSlot>], <Numer of finished slots>)
 type Result = TVar ([Int64], Int64)
-
 
 addToResult :: CheckLeaderArgs -> Result -> Int64 -> STM ()
 addToResult args result slot = do
@@ -209,9 +183,6 @@ checkLeaderSlotsConcurrent lArgs = do
     (CheckLeaderArgs vrfSkeyBytes nonceBytes sigmaOfF firstSlotOfEpoch epochLength)
       = lArgs
     slotsOfEpoch = [firstSlotOfEpoch .. firstSlotOfEpoch + epochLength]
-
-  -- tz     <- getCurrentTimeZone
-  -- pb     <- percentageProcessBar
 
   result <- newTVarIO ([], 0)
   mapM_ (forkIO . atomically . addToResult lArgs result) slotsOfEpoch

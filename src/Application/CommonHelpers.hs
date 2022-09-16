@@ -5,7 +5,9 @@ import qualified Data.ByteString.Base16        as B16
 import           Data.ByteString.UTF8           ( fromString
                                                 , toString
                                                 )
+import           Data.Int                       ( Int64 )
 import qualified Data.Text                     as T
+import           Data.Text                      ( Text )
 import           Data.Text.Format.Numbers       ( PrettyCfg(PrettyCfg)
                                                 , prettyF
                                                 )
@@ -20,7 +22,25 @@ import           Data.Time                      ( Day
                                                 , secondsToDiffTime
                                                 , utcToZonedTime
                                                 )
+import           Domain.ArmadaNonce             ( ArmadaNonce )
+import           Domain.BlockInfo               ( BlockInfo )
+import           Domain.BlockchainGenesis       ( BlockchainGenesis )
+import           Domain.EpochInfo               ( EpochInfo )
+import           Domain.EpochParameter          ( EpochParameter(EpochParameter)
+                                                )
+import           Domain.PoolHistory             ( PoolHistory )
+import           Domain.PoolInfo                ( PoolInfo )
 import           Numeric                        ( readHex )
+import           Repository.Api                 ( getBlockchainGenesis
+                                                , getEpochInfo
+                                                , getEpochParam
+                                                , getFirstShellyBlock
+                                                , getLatestEpochParam
+                                                , getNextNonce
+                                                , getPoolHistory
+                                                , getPoolInfo
+                                                , requestAndDecode
+                                                )
 import           System.ProgressBar             ( OnComplete(Clear)
                                                 , Progress(Progress)
                                                 , ProgressBar
@@ -50,6 +70,7 @@ import           System.ProgressBar             ( OnComplete(Clear)
                                                 , newProgressBar
                                                 , percentage
                                                 )
+import           Text.Printf                    ( printf )
 
 withStatusMessage :: String -> IO b -> IO b
 withStatusMessage message mOp = do
@@ -112,3 +133,75 @@ percentageProcessBar = do
                       , styleOnComplete    = Clear
                       }
   newProgressBar pbStyle 10 (Progress 0 100 ())
+
+armadaNonceRequest :: IO ArmadaNonce
+armadaNonceRequest = withStatusMessage "Checking next network epoch..."
+  $ requestAndDecode getNextNonce
+
+latestEpochRequest :: String -> IO EpochParameter
+latestEpochRequest blockFrostApi =
+  withStatusMessage "Checking current network epoch..."
+    $ requestAndDecode
+    $ getLatestEpochParam blockFrostApi
+
+epochParamRequest :: String -> Int -> IO EpochParameter
+epochParamRequest blockFrostApi epoch =
+  withStatusMessage "Checking epoch parameters..."
+    $ requestAndDecode
+    $ getEpochParam blockFrostApi epoch
+
+poolInfoRequest :: String -> String -> IO PoolInfo
+poolInfoRequest blockFrostApi poolId =
+  withStatusMessage "Checking Current Pool Sigma..."
+    $ requestAndDecode
+    $ getPoolInfo blockFrostApi poolId
+
+poolHistoryRequest :: String -> String -> IO [PoolHistory]
+poolHistoryRequest blockFrostApi poolId =
+  withStatusMessage "Checking Pool Sigma from Pool History..."
+  $ requestAndDecode
+  $ getPoolHistory blockFrostApi poolId :: IO [PoolHistory]
+
+
+epochInfoRequest :: String -> Int -> IO EpochInfo
+epochInfoRequest blockFrostApi epoch =
+  withStatusMessage "Checking epoch info for active stake..."
+    $ requestAndDecode
+    $ getEpochInfo blockFrostApi epoch
+
+genesisRequest :: String -> IO BlockchainGenesis
+genesisRequest blockFrostApi =
+  withStatusMessage "Checking network genenis..."
+    $ requestAndDecode
+    $ getBlockchainGenesis blockFrostApi
+
+firstShellyBlockRequest :: String -> IO BlockInfo
+firstShellyBlockRequest blockFrostApi =
+  withStatusMessage "Get first Shelly block"
+    $ requestAndDecode
+    $ getFirstShellyBlock blockFrostApi
+
+
+data PrintInfomation = PrintInfomation
+  { nonce            :: Text
+  , activeSlotCoeff  :: Float
+  , epochLength      :: Int64
+  , slotLength       :: Int
+  , firstSlotOfEpoch :: Int64
+  , activeStake      :: Integer
+  , poolActiveStake  :: Integer
+  , poolSigma        :: Float
+  }
+
+printInformation :: PrintInfomation -> IO ()
+printInformation (PrintInfomation nonce activeSlotCoeff epochLength slotLength firstSlotOfEpoch activeStake poolActiveStake poolSigma)
+  = do
+    printf "Nonce: %s\n"                     nonce
+    printf "Active Slot Coefficient: %.3f\n" activeSlotCoeff
+    printf "Epoch Length: %d\n"              epochLength
+    printf "Slot Length: %d\n"               slotLength
+    printf "First Slot of Epoch: %d\n"       firstSlotOfEpoch
+    printf "Last Slot of Epoch: %d\n"        (firstSlotOfEpoch + epochLength)
+    printf "Active Stake: %s\n"              (prettyInt activeStake)
+    printf "Pool Active Stake: %s\n"         (prettyInt poolActiveStake)
+    printf "Pool Sigma: %.9f\n"              poolSigma
